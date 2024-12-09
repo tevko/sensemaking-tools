@@ -13,8 +13,14 @@
 // limitations under the License.
 
 import { VertexModel } from "../models/vertex_model";
-import { formatCitations, groundSummary, parseStringIntoSummary } from "./grounding";
-import { SummaryChunk } from "../types";
+import {
+  formatCitations,
+  groundSummary,
+  parseStringIntoSummary,
+  voteTallySummary,
+  commentCitation,
+} from "./grounding";
+import { SummaryChunk, VoteTally, Comment } from "../types";
 
 // Mock the model response. This mock needs to be set up to return response specific for each test.
 let mockgenerateText: jest.SpyInstance;
@@ -40,7 +46,7 @@ describe("grounding test", () => {
         { id: "2", text: "I don't like cats" },
       ];
       const summary = "This is a great summary[1,2]";
-      const expectedOutput = `This is a great summary[[1](## "I like cats"),[2](## "I don't like cats")]`;
+      const expectedOutput = `This is a great summary[[1](## "I like cats"), [2](## "I don't like cats")]`;
       expect(formatCitations(comments, summary)).toEqual(expectedOutput);
     });
     it("should format markdown links correctly with voteTallies", () => {
@@ -61,7 +67,7 @@ describe("grounding test", () => {
         },
       ];
       const summary = "This is a great summary[1,2]";
-      const expectedOutput = `This is a great summary[[1](## "I like cats\nvotes: group-0(A=10, D=5, P=0)"),[2](## "I don't like cats\nvotes: group-0(A=5, D=10, P=6)")]`;
+      const expectedOutput = `This is a great summary[[1](## "I like cats\nvotes: group-0(Agree=10, Disagree=5, Pass=0)"), [2](## "I don't like cats\nvotes: group-0(Agree=5, Disagree=10, Pass=6)")]`;
       expect(formatCitations(comments, summary)).toEqual(expectedOutput);
     });
   });
@@ -118,5 +124,91 @@ Finally, this is another filler text.`;
       const summary = await parseStringIntoSummary(groundingResult, []);
       expect(summary.chunks).toEqual(expectedChunks);
     });
+  });
+
+  describe("voteTallySummary", () => {
+    it("should return an empty string if voteTalliesByGroup is undefined", () => {
+      const comment: Comment = {
+        id: "123",
+        text: "test comment",
+      };
+      expect(voteTallySummary(comment)).toBe("");
+    });
+
+    it("should return a formatted string with vote tallies when voteTalliesByGroup is defined", () => {
+      const comment: Comment = {
+        id: "123",
+        text: "test comment",
+        voteTalliesByGroup: {
+          group1: new VoteTally(10, 5),
+          group2: new VoteTally(15, 2, 3),
+        },
+      };
+      expect(voteTallySummary(comment)).toBe(
+        "votes: group-group1(Agree=10, Disagree=5, Pass=undefined) group-group2(Agree=15, Disagree=2, Pass=3)"
+      );
+    });
+  });
+});
+
+describe("commentCitation", () => {
+  it("should format a comment citation correctly without vote tallies", () => {
+    const comment: Comment = {
+      id: "123",
+      text: "This is a test comment.",
+    };
+    expect(commentCitation(comment)).toBe(`[123](## "This is a test comment.")`);
+  });
+
+  it("should format a comment citation correctly with vote tallies", () => {
+    const comment: Comment = {
+      id: "123",
+      text: "This is a test comment.",
+      voteTalliesByGroup: {
+        group1: {
+          agreeCount: 10,
+          disagreeCount: 5,
+          passCount: 1,
+          totalCount: 16,
+        },
+        group2: {
+          agreeCount: 15,
+          disagreeCount: 2,
+          passCount: 3,
+          totalCount: 20,
+        },
+      },
+    };
+    expect(commentCitation(comment)).toBe(
+      `[123](## "This is a test comment.\nvotes: group-group1(Agree=10, Disagree=5, Pass=1) group-group2(Agree=15, Disagree=2, Pass=3)")`
+    );
+  });
+
+  it("should handle comments with single quotes", () => {
+    const comment: Comment = {
+      id: "123",
+      text: "This is a 'test' comment with 'single quotes'.",
+    };
+    expect(commentCitation(comment)).toBe(
+      `[123](## "This is a 'test' comment with 'single quotes'.")`
+    );
+  });
+
+  it("should handle comments with double quotes", () => {
+    const comment: Comment = {
+      id: "123",
+      text: 'This is a "test" comment with "double quotes".',
+    };
+    expect(commentCitation(comment)).toBe(
+      `[123](## "This is a \\"test\\" comment with \\"double quotes\\".")`
+    );
+  });
+
+  it("should handle comments with newlines", () => {
+    const comment: Comment = {
+      id: "123",
+      text: "This is a test comment\nwith newlines.",
+    };
+    expect(commentCitation(comment)).toBe(`[123](## "This is a test comment with newlines.")`);
   });
 });

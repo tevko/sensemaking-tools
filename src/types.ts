@@ -135,9 +135,9 @@ export interface SummaryChunk {
  *   and others favoring...<citation comment_id=912>
  *
  * Output (MARKDOWN format):
- *  Members of Group A want cleaner parks.[[123](## "I want a cleaner park\nvotes: group-1(A=15, D=2, P=3)")[[345](## "Clean parks are essential.\nvotes: group-2(A=10, D=5)")]
- *   However, they disagree...[[678](## "More trash cans would help.\nvotes: group-1(A=20, D=1)")]
- *   and others favoring...[[912](## "Littering fines are the solution.\nvotes: group-2(A=12, D=3, P=2)")]
+ *  Members of Group A want cleaner parks.[[123](## "I want a cleaner park\nvotes: group-1(Agree=15, Disagree=2, Pass=3)")[[345](## "Clean parks are essential.\nvotes: group-2(Agree=10, Disagree=5)")]
+ *   However, they disagree...[[678](## "More trash cans would help.\nvotes: group-1(Agree=20, Disagree=1)")]
+ *   and others favoring...[[912](## "Littering fines are the solution.\nvotes: group-2(Agree=12, Disagree=3, Pass=2)")]
  */
 export type CitationFormat = "XML" | "MARKDOWN";
 

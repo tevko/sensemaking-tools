@@ -141,14 +141,15 @@ ${summary}`;
  * @param comment
  * @returns the summary as a string
  */
-function voteTallySummary(comment: Comment): string {
+export function voteTallySummary(comment: Comment): string {
   // Map k,v pairs from comment vote tallies to string representations, and combine into a single string.
   if (comment.voteTalliesByGroup) {
     return Object.entries(comment.voteTalliesByGroup as object).reduce((acc, [key, value]) => {
       return (
-        acc + `group-${key}(A=${value.agreeCount}, D=${value.disagreeCount}, P=${value.passCount})`
+        acc +
+        ` group-${key}(Agree=${value.agreeCount}, Disagree=${value.disagreeCount}, Pass=${value.passCount})`
       );
-    }, "votes: ");
+    }, "votes:");
   } else {
     return "";
   }
@@ -159,8 +160,8 @@ function voteTallySummary(comment: Comment): string {
  * @param comment
  * @returns the summary as a string
  */
-function commentCitation(comment: Comment): string {
-  const base = `[${comment.id}](## "${comment.text.replace('"', "'").replace("\n", " ")}`;
+export function commentCitation(comment: Comment): string {
+  const base = `[${comment.id}](## "${comment.text.replace(/"/g, '\\"').replace(/\n/g, " ")}`;
   if (comment.voteTalliesByGroup) {
     return base + `\n${voteTallySummary(comment)}")`;
   } else {
@@ -187,7 +188,7 @@ export function formatCitations(comments: Comment[], summary: string): string {
     // Map to markdown links that display the comment text and vote patterns when you hover over.
     const mdLinks = commentIds.map((commentId) => commentCitation(commentIndex.get(commentId)));
 
-    return "[" + mdLinks.join(",") + "]";
+    return "[" + mdLinks.join(", ") + "]";
   });
   // For debugging, add commentTable for searching comments that might have been removed at previous steps.
   //return summaryWithLinks + commentTable(comments);
