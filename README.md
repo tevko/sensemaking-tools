@@ -1,6 +1,6 @@
 # Sensemaking Tools
 
-This repo is meant to help with sensemaking for voting tasks. Comment and vote data can be summarized and categorized. Please see https://jigsaw-code.github.io/sensemaking-tools for a full breakdown of available methods and types!
+This repo is meant to help with sensemaking for voting tasks. Comment and vote data can be summarized and categorized. Please see https://jigsaw-code.github.io/sensemaking-tools for a full breakdown of available methods and types.
 
 ## Setup
 
