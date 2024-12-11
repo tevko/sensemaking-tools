@@ -36,7 +36,12 @@ For now, you job is the following: Identify portions of text in the summary maki
 
     [[a claim that needs to be grounded]]^[]
 
-If a portion of text is followed by a punctuation mark, like a comma, period, etc., then include the punctuation within the double brackets, like [[a claim that needs to be grounded,]] or [[a claim that needs to be grounded.]] However, prefer marking segments of texts that identify atomic or singular claims, rather than larger chunks (like complete sentences) of text making a larger number of claims.
+If a portion of text is followed by a punctuation mark, like a comma, period, etc., then include the punctuation within the double brackets, like this:
+
+    [[a claim that needs to be grounded,]]^[]
+    [[a claim that needs to be grounded.]]^[]
+
+However, prefer marking segments of texts that identify atomic or singular claims, rather than larger chunks (like complete sentences) of text making a larger number of claims.
 
 THIS IS IMPORTANT! Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of brackets as described above.
 
