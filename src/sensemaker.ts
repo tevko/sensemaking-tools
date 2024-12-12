@@ -26,7 +26,7 @@ import {
   Topic,
 } from "./types";
 import { categorizeWithRetry, generateCategorizationPrompt } from "./tasks/categorization";
-import { basicSummarize, voteTallySummarize } from "./tasks/summarization";
+import { summarizeByType } from "./tasks/summarization";
 import { getPrompt, hydrateCommentRecord } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
@@ -58,12 +58,36 @@ export class Sensemaker {
   }
 
   /**
-   * Summarize a set of comments using all available metadata.
-   * @param comments the text and (optional) vote data to consider
-   * @param summarizationType what summarization method to use
-   * @param topics the set of topics that should be present in the final summary
-   * @param additionalInstructions additional context to give the model as part of the prompt
-   * @returns a summary of the information.
+   * Generates a summary of public deliberation comments, optionally incorporating vote data.
+   *
+   * It offers flexibility in how topics for the summary are determined:
+   * 1. Categorized Comments: If the input `comments` are already categorized (i.e., they have a
+   *    `topics` property), those topics are used directly for the summary structure.
+   * 2. Provided Topics:  If `topics` are explicitly provided, they are used to categorize the
+   *    comments before summarization. This ensures the summary has statistics based on the
+   *    specified topics (like comments count per topic).
+   * 3. Learned Topics: If neither categorized comments nor explicit topics are provided, the
+   *    function will automatically learn topics from the comments using an LLM. This is the most
+   *    automated option but requires more processing time.
+   *
+   * The function supports different summarization types (e.g., basic summarization,
+   * vote-tally-based summarization), and allows for additional instructions to guide the
+   * summarization process. The generated summary is then grounded in the original comments to
+   * ensure accuracy and relevance.
+   *
+   * @param comments An array of `Comment` objects representing the public deliberation comments. If
+   *  these comments are already categorized (have a `topics` property), the summarization will be
+   *  based on those existing categories.
+   * @param summarizationType  The type of summarization to perform (e.g.,
+   *  `SummarizationType.BASIC`, `SummarizationType.VOTE_TALLY`). Defaults to
+   *  `SummarizationType.VOTE_TALLY`.
+   * @param topics  An optional array of `Topic` objects. If provided, these topics will be used for
+   *  comment categorization before summarization, ensuring that the summary addresses the specified
+   *  topics. If `comments` are already categorized, this parameter is ignored.
+   * @param additionalInstructions Optional additional instructions to provide to the LLM for
+   *  summarization. These instructions will be appended verbatim to the summarization prompt.
+   * @returns A Promise that resolves to a `Summary` object, containing the generated summary text
+   *  and metadata.
    */
   public async summarize(
     comments: Comment[],
@@ -71,15 +95,25 @@ export class Sensemaker {
     topics?: Topic[],
     additionalInstructions?: string
   ): Promise<Summary> {
-    let summary: string;
-    const model: Model = this.getModel("summarizationModel");
-    if (summarizationType == SummarizationType.BASIC) {
-      summary = await basicSummarize(comments, model, additionalInstructions);
-    } else if (summarizationType == SummarizationType.VOTE_TALLY) {
-      summary = await voteTallySummarize(comments, model, additionalInstructions);
-    } else {
-      throw TypeError("Unknown Summarization Type.");
+    // categories are required for summarization - make sure comments are categorized
+    if (comments.length > 0 && !comments[0].topics) {
+      if (!topics) {
+        topics = await this.learnTopics(
+          comments,
+          true, // including subtopics (as they are important for summaries)
+          undefined, // no top level topics specified
+          additionalInstructions // TODO: decide if we want to pass them here as well
+        );
+      }
+      comments = await this.categorizeComments(comments, true, topics, additionalInstructions);
     }
+
+    const summary = await summarizeByType(
+      this.getModel("summarizationModel"),
+      comments,
+      summarizationType,
+      additionalInstructions
+    );
     return groundSummary(this.getModel("groundingModel"), summary, comments);
   }
 

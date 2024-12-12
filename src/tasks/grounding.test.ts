@@ -67,7 +67,7 @@ describe("grounding test", () => {
         },
       ];
       const summary = "This is a great summary[1,2]";
-      const expectedOutput = `This is a great summary[[1](## "I like cats\nvotes: group-0(Agree=10, Disagree=5, Pass=0)"), [2](## "I don't like cats\nvotes: group-0(Agree=5, Disagree=10, Pass=6)")]`;
+      const expectedOutput = `This is a great summary[[1](## "I like cats\nVotes: group-0(Agree=10, Disagree=5, Pass=0)"), [2](## "I don't like cats\nVotes: group-0(Agree=5, Disagree=10, Pass=6)")]`;
       expect(formatCitations(comments, summary)).toEqual(expectedOutput);
     });
   });
@@ -145,7 +145,7 @@ Finally, this is another filler text.`;
         },
       };
       expect(voteTallySummary(comment)).toBe(
-        "votes: group-group1(Agree=10, Disagree=5, Pass=undefined) group-group2(Agree=15, Disagree=2, Pass=3)"
+        "Votes: group-group1(Agree=10, Disagree=5, Pass=undefined) group-group2(Agree=15, Disagree=2, Pass=3)"
       );
     });
   });
@@ -180,7 +180,7 @@ describe("commentCitation", () => {
       },
     };
     expect(commentCitation(comment)).toBe(
-      `[123](## "This is a test comment.\nvotes: group-group1(Agree=10, Disagree=5, Pass=1) group-group2(Agree=15, Disagree=2, Pass=3)")`
+      `[123](## "This is a test comment.\nVotes: group-group1(Agree=10, Disagree=5, Pass=1) group-group2(Agree=15, Disagree=2, Pass=3)")`
     );
   });
 

@@ -15,30 +15,81 @@
 // Functions for different ways to summarize Comment and Vote data.
 
 import { Model } from "../models/model";
-import { Comment } from "../types";
-import { getPrompt } from "../sensemaker_utils";
+import { Comment, SummarizationType } from "../types";
+import { getPrompt, groupCommentsBySubtopic } from "../sensemaker_utils";
 
-function getSummarizationInstructions(includeGroups: boolean): string {
-  return `Please summarize the public's perspective in relation to the comments
- submitted, making sure to include a section that's broken down by topic on both areas of
- disagreement between the groups, as well as points of common ground. 
- 
- ${
-   includeGroups
-     ? "There should also be a section describing the two voting groups. Focus on the " +
-       "group's expressed views and don't guess the demographics of the groups. This section " +
-       "should be one paragraph long."
-     : ""
- }
- 
- The summary should follow this format:
- - Intro
- ${includeGroups ? "- Description of Groups" : ""}
- - Areas of Disagreement
- - Areas of Agreement
- - Conclusion
+function getSummarizationInstructions(comments: Comment[], includeGroups: boolean): string {
+  // group comments by topics, count stats, add it to topics, and sort topics by # of comments
+  const commentsByTopic = groupCommentsBySubtopic(comments);
+  const topicStats = _countCommentsByTopic(commentsByTopic);
+  const sortedTopics = _sortTopicsByComments(topicStats);
+  const quantifiedTopics = _quantifyTopicNames(sortedTopics);
 
- Section names should be bolded.`;
+  return `You’re analyzing the results of a public deliberation on a topic. It contains comments and associated votes.
+You will summarize with the summary having all of the following categories and subcategories:
+
+${JSON.stringify(quantifiedTopics, null, 2)}
+
+Use categories or subcategories names exactly as they are provided (for example: "Topic Name (10 comments)").
+
+Your task is to write a summary for each section, taking into account the opinions of the groups, including minority viewpoints.
+
+First explain the perspectives of each group, highlighting common ground and points of division.
+Then, for areas of disagreement, analyze comments to see if there's a solution backed by the statements, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the statements.
+Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the statements.
+The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the deliberation statements.
+
+Do not generate:
+- Generic summaries (e.g., "There was discussion about ...")
+- Broad statements lacking specific details (e.g., "In many areas, ..."")
+Do not include group vote tallies in the summary.
+Do not crop the response; include all sections of the deliberation.
+
+The summary must follow this format:
+
+## Intro
+${includeGroups ? "## Description of Groups" : ""}
+## Topic Analysis
+### Topic 1 (with number of comments)
+  * **Subtopic 1** (with number of comments)
+    * _High consensus:_
+    * _Low consensus:_
+  * **Subtopic 2** (with number of comments)
+    * _High consensus:_
+    * _Low consensus:_
+### Topic 2 (with number of comments)
+  * **Subtopic 3** (with number of comments)
+    * _High consensus:_
+    * _Low consensus:_
+## Conclusion
+
+${includeGroups ? "There should be a one-paragraph section describing the two voting groups, focusing on their expressed views without guessing demographics." : ""}
+`;
+}
+
+/**
+ * Summarizes comments based on the specified summarization type.
+ *
+ * @param model The language model to use for summarization.
+ * @param comments An array of `Comment` objects containing the comments to summarize.
+ * @param summarizationType The type of summarization to perform (e.g., BASIC, VOTE_TALLY).
+ * @param additionalInstructions Optional additional instructions to guide the summarization process. These instructions will be included verbatim in the prompt sent to the LLM.
+ * @returns A Promise that resolves to the generated summary string.
+ * @throws {TypeError} If an unknown `summarizationType` is provided.
+ */
+export async function summarizeByType(
+  model: Model,
+  comments: Comment[],
+  summarizationType: SummarizationType,
+  additionalInstructions?: string
+): Promise<string> {
+  if (summarizationType === SummarizationType.BASIC) {
+    return await basicSummarize(comments, model, additionalInstructions);
+  } else if (summarizationType === SummarizationType.VOTE_TALLY) {
+    return await voteTallySummarize(comments, model, additionalInstructions);
+  } else {
+    throw new TypeError("Unknown Summarization Type.");
+  }
 }
 
 /**
@@ -55,7 +106,7 @@ export async function basicSummarize(
 ): Promise<string> {
   const commentTexts = comments.map((comment) => comment.text);
   return await model.generateText(
-    getPrompt(getSummarizationInstructions(false), commentTexts, additionalInstructions)
+    getPrompt(getSummarizationInstructions(comments, false), commentTexts, additionalInstructions)
   );
 }
 
@@ -85,9 +136,121 @@ export async function voteTallySummarize(
 ): Promise<string> {
   return await model.generateText(
     getPrompt(
-      getSummarizationInstructions(true),
+      getSummarizationInstructions(comments, true),
       formatCommentsWithVotes(comments),
       additionalInstructions
     )
   );
+}
+
+/**
+ * Represents statistics about a topic and its subtopics.
+ */
+interface TopicStats {
+  name: string;
+  commentCount: number;
+  subtopicStats?: TopicStats[];
+}
+
+/**
+ * Counts the number of comments associated with each topic and subtopic.
+ *
+ * @param commentsByTopic A nested map where keys are topic names, values are maps
+ *                        where keys are subtopic names, and values are maps where
+ *                        keys are comment IDs and values are comment texts.
+ * @returns An array of `TopicStats` objects.
+ */
+export function _countCommentsByTopic(commentsByTopic: {
+  [key: string]: { [key: string]: { [key: string]: string } };
+}): TopicStats[] {
+  const topicStats: TopicStats[] = [];
+
+  for (const topicName in commentsByTopic) {
+    const subtopics = commentsByTopic[topicName];
+    const subtopicStats: TopicStats[] = [];
+    let totalTopicComments = 0;
+
+    for (const subtopicName in subtopics) {
+      const commentCount = Object.keys(subtopics[subtopicName]).length;
+      totalTopicComments += commentCount;
+      subtopicStats.push({ name: subtopicName, commentCount });
+    }
+
+    topicStats.push({
+      name: topicName,
+      commentCount: totalTopicComments,
+      subtopicStats: subtopicStats,
+    });
+  }
+
+  return topicStats;
+}
+
+/**
+ * Sorts topics and their subtopics based on comment count in descending order, with "Other" topics and subtopics going last.
+ *
+ * @param topics An array of `TopicStats` objects to be sorted.
+ * @returns A new array of `TopicStats` objects, sorted by comment count.
+ */
+export function _sortTopicsByComments(topics: TopicStats[]): TopicStats[] {
+  topics.sort((a, b) => {
+    if (a.name === "Other") return 1;
+    if (b.name === "Other") return -1;
+    return b.commentCount - a.commentCount;
+  });
+
+  topics.forEach((topic) => {
+    if (topic.subtopicStats) {
+      topic.subtopicStats.sort((a, b) => {
+        if (a.name === "Other") return 1;
+        if (b.name === "Other") return -1;
+        return b.commentCount - a.commentCount;
+      });
+    }
+  });
+
+  return topics;
+}
+
+/**
+ * Quantifies topic names by adding the number of associated comments in parentheses.
+ *
+ * @param topics An array of `TopicStats` objects.
+ * @returns A map where keys are quantified topic names and values are arrays of quantified subtopic names.
+ *
+ * @example
+ * Example input:
+ * [
+ *   {
+ *     name: 'Topic A',
+ *     commentCount: 5,
+ *     subtopicStats: [
+ *       { name: 'Subtopic 1', commentCount: 2 },
+ *       { name: 'Subtopic 2', commentCount: 3 }
+ *     ]
+ *   }
+ * ]
+ *
+ * Expected output:
+ * {
+ *   'Topic A (5 comments)': [
+ *     'Subtopic 1 (2 comments)',
+ *     'Subtopic 2 (3 comments)'
+ *   ]
+ * }
+ */
+export function _quantifyTopicNames(topics: TopicStats[]): { [key: string]: string[] } {
+  const result: { [key: string]: string[] } = {};
+
+  for (const topic of topics) {
+    const topicName = `${topic.name} (${topic.commentCount} comments)`;
+
+    if (topic.subtopicStats) {
+      result[topicName] = topic.subtopicStats.map(
+        (subtopic) => `${subtopic.name} (${subtopic.commentCount} comments)`
+      );
+    }
+  }
+
+  return result;
 }

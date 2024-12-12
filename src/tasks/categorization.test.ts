@@ -17,10 +17,10 @@ import {
   generateCategorizationPrompt,
   validateCommentRecords,
   categorizeWithRetry,
-  groupCommentsByTopic,
 } from "./categorization";
 import { CommentRecord, Comment, Topic } from "../types";
 import { VertexModel } from "../models/vertex_model";
+import { groupCommentsBySubtopic } from "../sensemaker_utils";
 
 // Mock the model response. This mock needs to be set up to return response specific for each test.
 let mockGenerateData: jest.SpyInstance;
@@ -534,8 +534,8 @@ describe("findMissingComments", () => {
         },
       };
 
-      const result = groupCommentsByTopic(categorizedComments);
-      expect(JSON.parse(result)).toEqual(expectedOutput);
+      const result = groupCommentsBySubtopic(categorizedComments);
+      expect(result).toEqual(expectedOutput);
     });
 
     it("should throw an error if a comment has no topics", () => {
@@ -547,7 +547,7 @@ describe("findMissingComments", () => {
         },
       ];
 
-      expect(() => groupCommentsByTopic(categorizedComments)).toThrow(
+      expect(() => groupCommentsBySubtopic(categorizedComments)).toThrow(
         "Comment with ID 1 has no topics assigned."
       );
     });

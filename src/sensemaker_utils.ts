@@ -56,3 +56,48 @@ export function hydrateCommentRecord(
       return comment !== undefined;
     });
 }
+
+/**
+ * Groups categorized comments by topic and subtopic.
+ *
+ * @param categorized An array of categorized comments.
+ * @returns A JSON representing the comments grouped by topic and subtopic.
+ *
+ * Example:
+ * {
+ *   "Topic 1": {
+ *     "Subtopic 2": {
+ *       "id 1": "comment 1",
+ *       "id 2": "comment 2"
+ *     }
+ *   }
+ * }
+ *
+ * TODO: create a similar function to group comments by topics only.
+ */
+export function groupCommentsBySubtopic(categorized: Comment[]) {
+  const groupedComments: {
+    [topicName: string]: {
+      [subtopicName: string]: { [commentId: string]: string };
+    };
+  } = {};
+  for (const comment of categorized) {
+    if (!comment.topics || comment.topics.length === 0) {
+      throw new Error(`Comment with ID ${comment.id} has no topics assigned.`);
+    }
+    for (const topic of comment.topics) {
+      if (!groupedComments[topic.name]) {
+        groupedComments[topic.name] = {}; // init new topic name
+      }
+      if ("subtopics" in topic) {
+        for (const subtopic of topic.subtopics || []) {
+          if (!groupedComments[topic.name][subtopic.name]) {
+            groupedComments[topic.name][subtopic.name] = {}; // init new subtopic name
+          }
+          groupedComments[topic.name][subtopic.name][comment.id] = comment.text;
+        }
+      }
+    }
+  }
+  return groupedComments;
+}

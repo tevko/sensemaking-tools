@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CommentRecord, Comment, Topic, NestedTopic, FlatTopic } from "../types";
+import {
+  CommentRecord,
+  Comment,
+  Topic,
+  NestedTopic,
+  FlatTopic,
+  TopicCategorizedComment,
+  SubtopicCategorizedComment,
+} from "../types";
 import { MAX_RETRIES, RETRY_DELAY_MS } from "../models/vertex_model";
 import { Model } from "../models/model";
 import { getPrompt, hydrateCommentRecord } from "../sensemaker_utils";
@@ -48,7 +56,9 @@ export async function categorizeWithRetry(
     const uncategorizedCommentsForModel: string[] = uncategorized.map((comment) =>
       JSON.stringify({ id: comment.id, text: comment.text })
     );
-    const outputSchema: TSchema = Type.Array(includeSubtopics ? NestedTopic : FlatTopic);
+    const outputSchema: TSchema = Type.Array(
+      includeSubtopics ? SubtopicCategorizedComment : TopicCategorizedComment
+    );
     const newCategorized: CommentRecord[] = (await model.generateData(
       getPrompt(instructions, uncategorizedCommentsForModel, additionalInstructions),
       outputSchema
@@ -404,49 +414,4 @@ function assignDefaultCategory(
       ],
     };
   });
-}
-
-// TODO: Reconsider how this feature should be used, it is currently unused, but there has been
-// desire in the past to group by Topics instead of Comments (like to assist with deduplication).
-/**
- * Groups categorized comments by topic and subtopic.
- *
- * @param categorizedComments An array of categorized comments.
- * @returns A JSON string representing the comments grouped by topic and subtopic.
- *
- * Example:
- * {
- *   "Topic 1": {
- *     "Subtopic 2": {
- *       "id 1": "comment 1",
- *       "id 2": "comment 2"
- *     }
- *   }
- * }
- */
-export function groupCommentsByTopic(categorized: Comment[]): string {
-  const commentsByTopics: {
-    [topicName: string]: {
-      [subtopicName: string]: { [commentId: string]: string };
-    };
-  } = {};
-  for (const comment of categorized) {
-    if (!comment.topics || comment.topics.length === 0) {
-      throw new Error(`Comment with ID ${comment.id} has no topics assigned.`);
-    }
-    for (const topic of comment.topics) {
-      if (!commentsByTopics[topic.name]) {
-        commentsByTopics[topic.name] = {}; // init new topic name
-      }
-      if ("subtopics" in topic) {
-        for (const subtopic of topic.subtopics || []) {
-          if (!commentsByTopics[topic.name][subtopic.name]) {
-            commentsByTopics[topic.name][subtopic.name] = {}; // init new subtopic name
-          }
-          commentsByTopics[topic.name][subtopic.name][comment.id] = comment.text!;
-        }
-      }
-    }
-  }
-  return JSON.stringify(commentsByTopics, null, 2);
 }

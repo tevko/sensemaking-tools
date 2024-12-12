@@ -30,7 +30,7 @@ function formatComments(comments: Comment[]): string {
  */
 export function identifyClaimsPrompt(summary: string): string {
   return `
-In what follows you will be a given a summary of the outputs from a deliberative excercise. You will eventually be going through a list of comments and associated metadata (which might include voting patterns) and tasked with identifying source comments (and associated metadata) that substantiates the claims being made in the summary. This task is called "grounding". But that will come later.
+In what follows you will be a given a summary of the outputs from a deliberative exercise. You will eventually be going through a list of comments and associated metadata (which might include voting patterns) and tasked with identifying source comments (and associated metadata) that substantiates the claims being made in the summary. This task is called "grounding". But that will come later.
 
 For now, you job is the following: Identify portions of text in the summary making claims that need to be so grounded, and mark them by bracketing with double square brackets [[]], followed by a ^ character, and an empty set of single square brackets, which will eventually (in a later step) be the place where you identify grounding comment-ids, like this:
 
@@ -42,6 +42,8 @@ If a portion of text is followed by a punctuation mark, like a comma, period, et
     [[a claim that needs to be grounded.]]^[]
 
 However, prefer marking segments of texts that identify atomic or singular claims, rather than larger chunks (like complete sentences) of text making a larger number of claims.
+
+Do not ground topic and subtopics names (like "Infrastructure (5 comments)").
 
 THIS IS IMPORTANT! Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of brackets as described above.
 
@@ -57,7 +59,7 @@ ${summary}`;
  */
 export function assignGroundingPrompt(summary: string, comments: Comment[]): string {
   return `
-In what follows you will be a given a summary of the outputs from a deliberative excercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation.
+In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation.
 
 Your job: for each portion of text in the summary that is making a statement about the content of what was said in the comments (or how participants expressed themselves via votes submitted in response to other participant's comments), identify those comments that substantiate the claims being made in the corresponding portion of text, and place the comment ids for those statements in the single square brackets following the ^ character. For example, if you see a summary statement that looks like:
 
@@ -68,7 +70,9 @@ And you identify that comments 3, 5, and 10 support the summary statement, you w
     [[a claim that needs to be grounded]]^[3,5,10]
 
 You may notice that some statements marked for grounding already have comment ids assigned to them. If so, and you
-identify new comments that help groun the statement, you can add those comment ids to the existing set.
+identify new comments that help ground the statement, you can add those comment ids to the existing set.
+
+Add comment ids only, and don't add anything else.
 
 THIS IS IMPORTANT!
 Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of comment ids in brackets as described above.
@@ -89,7 +93,7 @@ ${formatComments(comments)}`;
  */
 export function verifyGroundingPrompt(summary: string, comments: Comment[]): string {
   return `
-In what follows you will be a given a summary of the outputs from a deliberative excercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation. These portions of text will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which may or may not ground the summary statement. For example, you might see:
+In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation. These portions of text will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which may or may not ground the summary statement. For example, you might see:
 
     [[a claim that needs to be grounded]]^[3,5,10]
 
@@ -121,7 +125,7 @@ ${formatComments(comments)}`;
  */
 export function finalizeGroundingPrompt(summary: string): string {
   return `
-In what follows you will be given a summay of the outputs from a deliberative excercise. Portions of the summary that have been surrounded by double square brackets [[]] have been previously identified as being in need of grounding (that is, of being backed up by comments submitted as part of the deliberation). Portions of text so marked will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which have been identified as grounding the statement. For example, you might see:
+In what follows you will be given a summary of the outputs from a deliberative exercise. Portions of the summary that have been surrounded by double square brackets [[]] have been previously identified as being in need of grounding (that is, of being backed up by comments submitted as part of the deliberation). Portions of text so marked will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which have been identified as grounding the statement. For example, you might see:
 
     [[a claim that needs to be grounded.]]^[3,5,10]
 
@@ -154,7 +158,7 @@ export function voteTallySummary(comment: Comment): string {
         acc +
         ` group-${key}(Agree=${value.agreeCount}, Disagree=${value.disagreeCount}, Pass=${value.passCount})`
       );
-    }, "votes:");
+    }, "Votes:");
   } else {
     return "";
   }
