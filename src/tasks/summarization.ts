@@ -16,12 +16,14 @@
 
 import { Model } from "../models/model";
 import { Comment, SummarizationType } from "../types";
-import { getPrompt, groupCommentsBySubtopic } from "../sensemaker_utils";
+import { getPrompt } from "../sensemaker_utils";
+import { SummaryStats, TopicStats } from "../stats_util";
 
-function getSummarizationInstructions(comments: Comment[], includeGroups: boolean): string {
-  // group comments by topics, count stats, add it to topics, and sort topics by # of comments
-  const commentsByTopic = groupCommentsBySubtopic(comments);
-  const topicStats = _countCommentsByTopic(commentsByTopic);
+export function getSummarizationInstructions(includeGroups: boolean, comments: Comment[]): string {
+  // Prepare statistics like vote count and number of comments per topic for injecting in prompt as
+  // well as sorts topics based on count.
+  const summaryStats = new SummaryStats(comments);
+  const topicStats = summaryStats.getStatsByTopic();
   const sortedTopics = _sortTopicsByComments(topicStats);
   const quantifiedTopics = _quantifyTopicNames(sortedTopics);
 
@@ -63,7 +65,19 @@ ${includeGroups ? "## Description of Groups" : ""}
     * _Low consensus:_
 ## Conclusion
 
-${includeGroups ? "There should be a one-paragraph section describing the two voting groups, focusing on their expressed views without guessing demographics." : ""}
+The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
+The first sentence should include the information that there were ${summaryStats.commentCount} statements ${includeGroups ? `that had ${summaryStats.voteCount} votes` : ""}.
+The second sentence should include what topics were discussed. 
+${
+  includeGroups
+    ? "The third sentence should include information on the groups such " +
+      "as their similarities and differences. "
+    : ""
+} 
+The next sentence should list topics with consensus.
+The last sentence should list topics without consensus.
+
+${includeGroups ? "There should be a one-paragraph section describing the voting groups, focusing on their expressed views without guessing demographics." : ""}
 `;
 }
 
@@ -106,7 +120,7 @@ export async function basicSummarize(
 ): Promise<string> {
   const commentTexts = comments.map((comment) => comment.text);
   return await model.generateText(
-    getPrompt(getSummarizationInstructions(comments, false), commentTexts, additionalInstructions)
+    getPrompt(getSummarizationInstructions(false, comments), commentTexts, additionalInstructions)
   );
 }
 
@@ -136,54 +150,11 @@ export async function voteTallySummarize(
 ): Promise<string> {
   return await model.generateText(
     getPrompt(
-      getSummarizationInstructions(comments, true),
+      getSummarizationInstructions(true, comments),
       formatCommentsWithVotes(comments),
       additionalInstructions
     )
   );
-}
-
-/**
- * Represents statistics about a topic and its subtopics.
- */
-interface TopicStats {
-  name: string;
-  commentCount: number;
-  subtopicStats?: TopicStats[];
-}
-
-/**
- * Counts the number of comments associated with each topic and subtopic.
- *
- * @param commentsByTopic A nested map where keys are topic names, values are maps
- *                        where keys are subtopic names, and values are maps where
- *                        keys are comment IDs and values are comment texts.
- * @returns An array of `TopicStats` objects.
- */
-export function _countCommentsByTopic(commentsByTopic: {
-  [key: string]: { [key: string]: { [key: string]: string } };
-}): TopicStats[] {
-  const topicStats: TopicStats[] = [];
-
-  for (const topicName in commentsByTopic) {
-    const subtopics = commentsByTopic[topicName];
-    const subtopicStats: TopicStats[] = [];
-    let totalTopicComments = 0;
-
-    for (const subtopicName in subtopics) {
-      const commentCount = Object.keys(subtopics[subtopicName]).length;
-      totalTopicComments += commentCount;
-      subtopicStats.push({ name: subtopicName, commentCount });
-    }
-
-    topicStats.push({
-      name: topicName,
-      commentCount: totalTopicComments,
-      subtopicStats: subtopicStats,
-    });
-  }
-
-  return topicStats;
 }
 
 /**

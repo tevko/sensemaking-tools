@@ -75,7 +75,11 @@ export function hydrateCommentRecord(
  *
  * TODO: create a similar function to group comments by topics only.
  */
-export function groupCommentsBySubtopic(categorized: Comment[]) {
+export function groupCommentsBySubtopic(categorized: Comment[]): {
+  [topicName: string]: {
+    [subtopicName: string]: { [commentId: string]: string };
+  };
+} {
   const groupedComments: {
     [topicName: string]: {
       [subtopicName: string]: { [commentId: string]: string };
@@ -83,7 +87,8 @@ export function groupCommentsBySubtopic(categorized: Comment[]) {
   } = {};
   for (const comment of categorized) {
     if (!comment.topics || comment.topics.length === 0) {
-      throw new Error(`Comment with ID ${comment.id} has no topics assigned.`);
+      console.log(`Comment with ID ${comment.id} has no topics assigned.`);
+      continue;
     }
     for (const topic of comment.topics) {
       if (!groupedComments[topic.name]) {

@@ -13,79 +13,70 @@
 // limitations under the License.
 import {
   formatCommentsWithVotes,
-  _countCommentsByTopic,
+  getSummarizationInstructions,
   _sortTopicsByComments,
   _quantifyTopicNames,
 } from "./summarization";
 
+const TEST_COMMENTS = [
+  {
+    id: "1",
+    text: "comment1",
+    voteTalliesByGroup: {
+      "0": {
+        agreeCount: 10,
+        disagreeCount: 5,
+        passCount: 0,
+        totalCount: 15,
+      },
+      "1": {
+        agreeCount: 5,
+        disagreeCount: 10,
+        passCount: 5,
+        totalCount: 20,
+      },
+    },
+  },
+  {
+    id: "2",
+    text: "comment2",
+    voteTalliesByGroup: {
+      "0": {
+        agreeCount: 2,
+        disagreeCount: 5,
+        passCount: 3,
+        totalCount: 10,
+      },
+      "1": {
+        agreeCount: 5,
+        disagreeCount: 3,
+        passCount: 2,
+        totalCount: 10,
+      },
+    },
+  },
+];
+
 describe("SummaryTest", () => {
+  it("prompt should include the comment count and the vote count", () => {
+    // Has 2 comments and 55 votes.
+    expect(getSummarizationInstructions(true, TEST_COMMENTS)).toContain("2 statements");
+    expect(getSummarizationInstructions(true, TEST_COMMENTS)).toContain("55 votes");
+  });
+
+  it("prompt shouldn't include votes if groups aren't included", () => {
+    // Has 2 comments and 55 votes.
+    expect(getSummarizationInstructions(false, TEST_COMMENTS)).toContain("2 statements");
+    expect(getSummarizationInstructions(false, TEST_COMMENTS)).not.toContain("55 votes");
+  });
+
   it("should format comments with vote tallies via formatCommentsWithVotes", () => {
-    expect(
-      formatCommentsWithVotes([
-        {
-          id: "1",
-          text: "comment1",
-          voteTalliesByGroup: {
-            "0": {
-              agreeCount: 10,
-              disagreeCount: 5,
-              passCount: 0,
-              totalCount: 15,
-            },
-            "1": {
-              agreeCount: 5,
-              disagreeCount: 10,
-              passCount: 5,
-              totalCount: 20,
-            },
-          },
-        },
-        {
-          id: "2",
-          text: "comment2",
-          voteTalliesByGroup: {
-            "0": {
-              agreeCount: 2,
-              disagreeCount: 5,
-              passCount: 3,
-              totalCount: 10,
-            },
-            "1": {
-              agreeCount: 5,
-              disagreeCount: 3,
-              passCount: 2,
-              totalCount: 10,
-            },
-          },
-        },
-      ])
-    ).toEqual([
+    expect(formatCommentsWithVotes(TEST_COMMENTS)).toEqual([
       `comment1
       vote info per group: {"0":{"agreeCount":10,"disagreeCount":5,"passCount":0,"totalCount":15},"1":{"agreeCount":5,"disagreeCount":10,"passCount":5,"totalCount":20}}`,
       `comment2
       vote info per group: {"0":{"agreeCount":2,"disagreeCount":5,"passCount":3,"totalCount":10},"1":{"agreeCount":5,"disagreeCount":3,"passCount":2,"totalCount":10}}`,
     ]);
-  });
-
-  it("should count comments by topic", () => {
-    const commentsByTopic = {
-      "Topic A": {
-        "Subtopic A.1": { c1: "comment 1", c2: "comment 2" },
-        "Subtopic A.2": { c3: "comment 3" },
-      },
-    };
-
-    const expectedTopicStats = [
-      {
-        name: "Topic A",
-        commentCount: 3,
-        subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 1 },
-        ],
-      },
-    ];
-    expect(_countCommentsByTopic(commentsByTopic)).toEqual(expectedTopicStats);
   });
 
   it("should sort topics by comment count and put 'Other' topics and subtopics last", () => {

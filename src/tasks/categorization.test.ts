@@ -20,7 +20,6 @@ import {
 } from "./categorization";
 import { CommentRecord, Comment, Topic } from "../types";
 import { VertexModel } from "../models/vertex_model";
-import { groupCommentsBySubtopic } from "../sensemaker_utils";
 
 // Mock the model response. This mock needs to be set up to return response specific for each test.
 let mockGenerateData: jest.SpyInstance;
@@ -494,62 +493,5 @@ describe("findMissingComments", () => {
       { id: "1", text: "Comment 1" },
       { id: "2", text: "Comment 2" },
     ]);
-  });
-
-  describe("groupCommentsByTopic", () => {
-    it("should group comments by topic and subtopic", () => {
-      const categorizedComments: Comment[] = [
-        {
-          id: "1",
-          text: "Comment 1",
-          topics: [
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
-            { name: "Topic 2", subtopics: [{ name: "Subtopic 2.1" }] },
-          ],
-        },
-        {
-          id: "2",
-          text: "Comment 2",
-          topics: [
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.2" }] },
-          ],
-        },
-      ];
-
-      const expectedOutput = {
-        "Topic 1": {
-          "Subtopic 1.1": {
-            "1": "Comment 1",
-            "2": "Comment 2",
-          },
-          "Subtopic 1.2": {
-            "2": "Comment 2",
-          },
-        },
-        "Topic 2": {
-          "Subtopic 2.1": {
-            "1": "Comment 1",
-          },
-        },
-      };
-
-      const result = groupCommentsBySubtopic(categorizedComments);
-      expect(result).toEqual(expectedOutput);
-    });
-
-    it("should throw an error if a comment has no topics", () => {
-      const categorizedComments: Comment[] = [
-        {
-          id: "1",
-          text: "Comment 1",
-          topics: [], // No topics assigned
-        },
-      ];
-
-      expect(() => groupCommentsBySubtopic(categorizedComments)).toThrow(
-        "Comment with ID 1 has no topics assigned."
-      );
-    });
   });
 });
