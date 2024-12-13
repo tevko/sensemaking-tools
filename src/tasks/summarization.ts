@@ -19,10 +19,12 @@ import { Comment, SummarizationType } from "../types";
 import { getPrompt } from "../sensemaker_utils";
 import { SummaryStats, TopicStats } from "../stats_util";
 
-export function getSummarizationInstructions(includeGroups: boolean, comments: Comment[]): string {
+export function getSummarizationInstructions(
+  includeGroups: boolean,
+  summaryStats: SummaryStats
+): string {
   // Prepare statistics like vote count and number of comments per topic for injecting in prompt as
   // well as sorts topics based on count.
-  const summaryStats = new SummaryStats(comments);
   const topicStats = summaryStats.getStatsByTopic();
   const sortedTopics = _sortTopicsByComments(topicStats);
   const quantifiedTopics = _quantifyTopicNames(sortedTopics);
@@ -93,14 +95,14 @@ ${includeGroups ? "There should be a one-paragraph section describing the voting
  */
 export async function summarizeByType(
   model: Model,
-  comments: Comment[],
+  summaryStats: SummaryStats,
   summarizationType: SummarizationType,
   additionalInstructions?: string
 ): Promise<string> {
   if (summarizationType === SummarizationType.BASIC) {
-    return await basicSummarize(comments, model, additionalInstructions);
+    return await basicSummarize(summaryStats, model, additionalInstructions);
   } else if (summarizationType === SummarizationType.VOTE_TALLY) {
-    return await voteTallySummarize(comments, model, additionalInstructions);
+    return await voteTallySummarize(summaryStats, model, additionalInstructions);
   } else {
     throw new TypeError("Unknown Summarization Type.");
   }
@@ -114,13 +116,17 @@ export async function summarizeByType(
  * @returns: the LLM's summarization.
  */
 export async function basicSummarize(
-  comments: Comment[],
+  summaryStats: SummaryStats,
   model: Model,
   additionalInstructions?: string
 ): Promise<string> {
-  const commentTexts = comments.map((comment) => comment.text);
+  const commentTexts = summaryStats.comments.map((comment) => comment.text);
   return await model.generateText(
-    getPrompt(getSummarizationInstructions(false, comments), commentTexts, additionalInstructions)
+    getPrompt(
+      getSummarizationInstructions(false, summaryStats),
+      commentTexts,
+      additionalInstructions
+    )
   );
 }
 
@@ -144,14 +150,14 @@ export function formatCommentsWithVotes(commentData: Comment[]): string[] {
  * @returns: the LLM's summarization.
  */
 export async function voteTallySummarize(
-  comments: Comment[],
+  summaryStats: SummaryStats,
   model: Model,
   additionalInstructions?: string
 ): Promise<string> {
   return await model.generateText(
     getPrompt(
-      getSummarizationInstructions(true, comments),
-      formatCommentsWithVotes(comments),
+      getSummarizationInstructions(true, summaryStats),
+      formatCommentsWithVotes(summaryStats.comments),
       additionalInstructions
     )
   );

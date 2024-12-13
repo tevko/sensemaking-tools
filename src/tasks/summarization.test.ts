@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+import { SummaryStats } from "../stats_util";
 import {
   formatCommentsWithVotes,
   getSummarizationInstructions,
@@ -60,14 +61,22 @@ const TEST_COMMENTS = [
 describe("SummaryTest", () => {
   it("prompt should include the comment count and the vote count", () => {
     // Has 2 comments and 55 votes.
-    expect(getSummarizationInstructions(true, TEST_COMMENTS)).toContain("2 statements");
-    expect(getSummarizationInstructions(true, TEST_COMMENTS)).toContain("55 votes");
+    expect(getSummarizationInstructions(true, new SummaryStats(TEST_COMMENTS))).toContain(
+      "2 statements"
+    );
+    expect(getSummarizationInstructions(true, new SummaryStats(TEST_COMMENTS))).toContain(
+      "55 votes"
+    );
   });
 
   it("prompt shouldn't include votes if groups aren't included", () => {
     // Has 2 comments and 55 votes.
-    expect(getSummarizationInstructions(false, TEST_COMMENTS)).toContain("2 statements");
-    expect(getSummarizationInstructions(false, TEST_COMMENTS)).not.toContain("55 votes");
+    expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).toContain(
+      "2 statements"
+    );
+    expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).not.toContain(
+      "55 votes"
+    );
   });
 
   it("should format comments with vote tallies via formatCommentsWithVotes", () => {

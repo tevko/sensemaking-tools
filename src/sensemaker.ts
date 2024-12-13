@@ -31,6 +31,45 @@ import { getPrompt, hydrateCommentRecord } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
 import { groundSummary } from "./tasks/grounding";
+import { SummaryStats } from "./stats_util";
+import { summaryContainsStats } from "./tasks/stats_checker";
+
+/**
+ * Rerun a function multiple times.
+ * @param func the function to attempt
+ * @param isValid checks that the response from func is valid
+ * @param maxRetries the maximum number of times to retry func
+ * @param errorMsg the error message to throw
+ * @param retryDelayMS how long to wait in miliseconds between calls
+ * @param funcArgs the args for func and isValid
+ * @returns the valid response from func
+ */
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+async function retryCall<T>(
+  func: (...args: any[]) => Promise<T>,
+  isValid: (response: T, ...args: any[]) => boolean,
+  maxRetries: number,
+  errorMsg: string,
+  retryDelayMS: number = RETRY_DELAY_MS,
+  ...funcArgs: any[]
+) {
+  /* eslint-enable  @typescript-eslint/no-explicit-any */
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await func(...funcArgs);
+      if (isValid(response, ...funcArgs)) {
+        return response;
+      }
+      console.error(`Attempt ${attempt} failed. Invalid response:`, response);
+    } catch (error) {
+      console.error(`Attempt ${attempt} failed:`, error);
+    }
+
+    console.log(`Retrying in ${retryDelayMS / 1000} seconds`);
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMS));
+  }
+  throw new Error(`Failed after ${maxRetries} attempts: ${errorMsg}`);
+}
 
 // Class to make sense of a deliberation. Uses LLMs to learn what topics were discussed and
 // categorize comments. Then these categorized comments can be used with optional Vote data to
@@ -107,13 +146,20 @@ export class Sensemaker {
       }
       comments = await this.categorizeComments(comments, true, topics, additionalInstructions);
     }
-
-    const summary = await summarizeByType(
+    const summary = await retryCall(
+      async function (model: Model, summaryStats: SummaryStats): Promise<string> {
+        return summarizeByType(model, summaryStats, summarizationType, additionalInstructions);
+      },
+      function (summary: string, summaryStats: SummaryStats): boolean {
+        return summaryContainsStats(summary, summaryStats, summarizationType);
+      },
+      MAX_RETRIES,
+      "The statistics don't match what's in the summary.",
+      undefined,
       this.getModel("summarizationModel"),
-      comments,
-      summarizationType,
-      additionalInstructions
+      new SummaryStats(comments)
     );
+
     return groundSummary(this.getModel("groundingModel"), summary, comments);
   }
 
@@ -139,23 +185,22 @@ export class Sensemaker {
     const commentTexts = comments.map((comment) => "```" + comment.text + "```");
     // decide which schema to use based on includeSubtopics
     const schema = Type.Array(includeSubtopics ? NestedTopic : FlatTopic);
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      const response = (await this.getModel("categorizationModel").generateData(
-        getPrompt(instructions, commentTexts, additionalInstructions),
-        schema
-      )) as Topic[];
 
-      if (learnedTopicsValid(response, topics)) {
-        return response;
-      } else {
-        console.warn(
-          `Learned topics failed validation, attempt ${attempt}. Retrying in ${RETRY_DELAY_MS / 1000} seconds...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-      }
-    }
-
-    throw new Error("Topic modeling failed after multiple retries.");
+    return retryCall(
+      async function (model: Model): Promise<Topic[]> {
+        return (await model.generateData(
+          getPrompt(instructions, commentTexts, additionalInstructions),
+          schema
+        )) as Topic[];
+      },
+      function (response: Topic[]): boolean {
+        return learnedTopicsValid(response, topics);
+      },
+      MAX_RETRIES,
+      "Topic modeling failed.",
+      undefined,
+      this.getModel("categorizationModel")
+    );
   }
 
   /**
