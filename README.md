@@ -1,8 +1,8 @@
-# Sensemaking Tools
+# Sensemaking tools
 
 ## Overview
 
-Jigsaw’s Sensemaking Tools help make sense of large-scale online conversations, leveraging LLMs to categorize comments, and summarize comments and voting patterns to surface actionable insights. There are currently three main functions:
+Jigsaw’s Sensemaking tools help make sense of large-scale online conversations, leveraging LLMs to categorize comments, and summarize comments and voting patterns to surface actionable insights. There are currently three main functions:
 
 - **Topic Learning** - identifies topics and optionally subtopics from a set of comments.
 - **Categorization** - sorts comments into topics defined by a user or from the Topic Learning function. Comments can belong to more than one topic.
@@ -28,7 +28,7 @@ LLM pricing is based on token count and constantly changing. Here we list the to
 | Input Tokens | 41,000 | 41,000 | 143,000 |
 | Output Tokens | 1,000 | 26,000 | 25,000 |
 
-## Running the Tools - Setup
+## Running the tools - Setup
 
 First make sure you have `npm` installed (`apt-get install npm` on Ubuntu-esque systems).
 
@@ -80,7 +80,7 @@ topics, "This is from a conversation on a $15 minimum wage in Seattle" // additi
 console.log(summary.getText("MARKDOWN"));
 ```
 
-## Making Changes to the Tools - Development
+## Making Changes to the tools - Development
 
 ### Testing
 
