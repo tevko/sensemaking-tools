@@ -38,10 +38,10 @@ export class VertexModel extends Model {
    * Create a model object.
    * @param project - the Google Cloud Project ID, not the numberic project name
    * @param location - The Google Cloud Project location
-   * @param modelName - the name of the model to connect with, like "gemini-1.5-pro-002", see the
-   * full list here: https://cloud.google.com/model-garden?hl=en
+   * @param modelName - the name of the model from Vertex AI's Model Garden to connect with, see
+   * the full list here: https://cloud.google.com/model-garden
    */
-  constructor(project: string, location: string, modelName: string) {
+  constructor(project: string, location: string, modelName: string = "gemini-1.5-pro-002") {
     super();
     this.vertexAI = new VertexAI({
       project: project,

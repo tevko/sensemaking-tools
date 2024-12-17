@@ -53,12 +53,11 @@ Then to log in locally run:
 Summarize Seattle’s $15 Minimum Wage Conversation.
 
 ```
-// Set up the tools to use Gemini Pro 1.5 and related authentication info.
+// Set up the tools to use the default Vertex model (Gemini Pro 1.5) and related authentication info.
 const mySensemaker = new Sensemaker({
   defaultModel: new VertexModel(
     "myGoogleCloudProject123,
     "us-central1",
-    "gemini-1.5-pro-002"
   ),
 });
 
@@ -97,7 +96,7 @@ The documentation [here](https://jigsaw-code.github.io/sensemaking-tools) is the
 
 ## Feedback
 
-If you have questions or issues with this library please leave feedback [here](https://docs.google.com/forms/d/e/1FAIpQLSd6kScXaf0d8XR7X9mgHBgG11DJYXV1hEzYLmqpxMcDFJxOhQ/viewform?resourcekey=0-GTVtn872epNsEHtI2ClBEA) and we will reach out to you.
+If you have questions or issues with this library please leave feedback [here](https://docs.google.com/forms/d/e/1FAIpQLSd6kScXaf0d8XR7X9mgHBgG11DJYXV1hEzYLmqpxMcDFJxOhQ/viewform?resourcekey=0-GTVtn872epNsEHtI2ClBEA) and we will reach out to you. Our team is actively evaluating Sensemaking performance and is aiming to share our results on this page in the future. Please note that performance results may vary depending on the model selected.
 
 ## Cloud Vertex Terms of Use
 
