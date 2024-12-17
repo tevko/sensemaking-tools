@@ -29,6 +29,9 @@ export function getSummarizationInstructions(
   const sortedTopics = _sortTopicsByComments(topicStats);
   const quantifiedTopics = _quantifyTopicNames(sortedTopics);
 
+  const commentCount = summaryStats.commentCount.toLocaleString();
+  const voteCount = summaryStats.voteCount.toLocaleString();
+
   return `You’re analyzing the results of a public deliberation on a topic. It contains comments and associated votes.
 You will summarize with the summary having all of the following categories and subcategories:
 
@@ -68,7 +71,7 @@ ${includeGroups ? "## Description of Groups" : ""}
 ## Conclusion
 
 The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
-The first sentence should include the information that there were ${summaryStats.commentCount} comments ${includeGroups ? `that had ${summaryStats.voteCount} votes` : ""}.
+The first sentence should include the information that there were ${commentCount} comments ${includeGroups ? `that had ${voteCount} votes` : ""}.
 The second sentence should include what topics were discussed. 
 ${
   includeGroups

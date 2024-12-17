@@ -29,18 +29,20 @@ export function summaryContainsStats(
   summaryStats: SummaryStats,
   summarizationType: SummarizationType
 ): boolean {
-  if (!summary.includes(`${summaryStats.commentCount} comments`)) {
+  const commentCount = summaryStats.commentCount.toLocaleString();
+  if (!summary.includes(`${commentCount} comments`)) {
     console.error(`Summary does not contain the correct number of total comments from the
-        deliberation. commentCount=${summaryStats.commentCount} and summary=${summary}`);
+        deliberation. commentCount=${commentCount} and summary=${summary}`);
     return false;
   }
 
+  const voteCount = summaryStats.voteCount.toLocaleString();
   if (
     summarizationType == SummarizationType.VOTE_TALLY &&
-    !summary.includes(`${summaryStats.voteCount} votes`)
+    !summary.includes(`${voteCount} votes`)
   ) {
     console.error(`Summary does not contain the correct number of total votes from the
-        deliberation. voteCount=${summaryStats.voteCount} and summary=${summary}`);
+        deliberation. voteCount=${voteCount} and summary=${summary}`);
     return false;
   }
 

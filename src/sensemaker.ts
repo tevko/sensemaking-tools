@@ -42,6 +42,7 @@ import { summaryContainsStats } from "./tasks/stats_checker";
  * @param errorMsg the error message to throw
  * @param retryDelayMS how long to wait in miliseconds between calls
  * @param funcArgs the args for func and isValid
+ * @param isValidArgs the args for isValid
  * @returns the valid response from func
  */
 /* eslint-disable  @typescript-eslint/no-explicit-any */
@@ -51,13 +52,14 @@ async function retryCall<T>(
   maxRetries: number,
   errorMsg: string,
   retryDelayMS: number = RETRY_DELAY_MS,
-  ...funcArgs: any[]
+  funcArgs: any[],
+  isValidArgs: any[]
 ) {
   /* eslint-enable  @typescript-eslint/no-explicit-any */
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await func(...funcArgs);
-      if (isValid(response, ...funcArgs)) {
+      if (isValid(response, ...isValidArgs)) {
         return response;
       }
       console.error(`Attempt ${attempt} failed. Invalid response:`, response);
@@ -146,18 +148,27 @@ export class Sensemaker {
       }
       comments = await this.categorizeComments(comments, true, topics, additionalInstructions);
     }
+    const summaryStats = new SummaryStats(comments);
     const summary = await retryCall(
-      async function (model: Model, summaryStats: SummaryStats): Promise<string> {
+      async function (
+        model: Model,
+        summaryStats: SummaryStats,
+        summarizationType: SummarizationType
+      ): Promise<string> {
         return summarizeByType(model, summaryStats, summarizationType, additionalInstructions);
       },
-      function (summary: string, summaryStats: SummaryStats): boolean {
+      function (
+        summary: string,
+        summaryStats: SummaryStats,
+        summarizationType: SummarizationType
+      ): boolean {
         return summaryContainsStats(summary, summaryStats, summarizationType);
       },
       MAX_RETRIES,
       "The statistics don't match what's in the summary.",
       undefined,
-      this.getModel("summarizationModel"),
-      new SummaryStats(comments)
+      [this.getModel("summarizationModel"), summaryStats, summarizationType],
+      [summaryStats, summarizationType]
     );
 
     return groundSummary(this.getModel("groundingModel"), summary, comments);
@@ -199,7 +210,8 @@ export class Sensemaker {
       MAX_RETRIES,
       "Topic modeling failed.",
       undefined,
-      this.getModel("categorizationModel")
+      [this.getModel("categorizationModel")],
+      []
     );
   }
 

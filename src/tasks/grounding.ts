@@ -45,6 +45,8 @@ However, prefer marking segments of texts that identify atomic or singular claim
 
 Do not ground topic and subtopics names (like "Infrastructure (5 comments)").
 
+Do not ground claims about the number of total comments in the conversation or the number of total votes.
+
 THIS IS IMPORTANT! Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of brackets as described above.
 
 Here is the summary for grounding:
