@@ -68,7 +68,7 @@ ${includeGroups ? "## Description of Groups" : ""}
 ## Conclusion
 
 The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
-The first sentence should include the information that there were ${summaryStats.commentCount} statements ${includeGroups ? `that had ${summaryStats.voteCount} votes` : ""}.
+The first sentence should include the information that there were ${summaryStats.commentCount} comments ${includeGroups ? `that had ${summaryStats.voteCount} votes` : ""}.
 The second sentence should include what topics were discussed. 
 ${
   includeGroups

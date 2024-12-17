@@ -27,21 +27,21 @@ const TEST_SUMMARY_STATS = new SummaryStats([
 
 describe("StatsCheckerTest", () => {
   it("should return true for a good summary", () => {
-    const summary = "There are 60 votes and 5 statements.";
+    const summary = "There are 60 votes and 5 comments.";
     expect(
       summaryContainsStats(summary, TEST_SUMMARY_STATS, SummarizationType.VOTE_TALLY)
     ).toBeTruthy();
   });
 
-  it("should return false if missing the right statement count", () => {
-    const summary = "There are 60 votes and 6 statements.";
+  it("should return false if missing the right comment count", () => {
+    const summary = "There are 60 votes and 6 comments.";
     expect(
       summaryContainsStats(summary, TEST_SUMMARY_STATS, SummarizationType.VOTE_TALLY)
     ).toBeFalsy();
   });
 
   it("should return false if missing the right vote count", () => {
-    const summary = "There are 6 votes and 5 statements.";
+    const summary = "There are 6 votes and 5 comments.";
     expect(
       summaryContainsStats(summary, TEST_SUMMARY_STATS, SummarizationType.VOTE_TALLY)
     ).toBeFalsy();

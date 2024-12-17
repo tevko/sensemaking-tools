@@ -62,7 +62,7 @@ describe("SummaryTest", () => {
   it("prompt should include the comment count and the vote count", () => {
     // Has 2 comments and 55 votes.
     expect(getSummarizationInstructions(true, new SummaryStats(TEST_COMMENTS))).toContain(
-      "2 statements"
+      "2 comments"
     );
     expect(getSummarizationInstructions(true, new SummaryStats(TEST_COMMENTS))).toContain(
       "55 votes"
@@ -72,7 +72,7 @@ describe("SummaryTest", () => {
   it("prompt shouldn't include votes if groups aren't included", () => {
     // Has 2 comments and 55 votes.
     expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).toContain(
-      "2 statements"
+      "2 comments"
     );
     expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).not.toContain(
       "55 votes"

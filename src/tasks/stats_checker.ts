@@ -29,7 +29,7 @@ export function summaryContainsStats(
   summaryStats: SummaryStats,
   summarizationType: SummarizationType
 ): boolean {
-  if (!summary.includes(`${summaryStats.commentCount} statements`)) {
+  if (!summary.includes(`${summaryStats.commentCount} comments`)) {
     console.error(`Summary does not contain the correct number of total comments from the
         deliberation. commentCount=${summaryStats.commentCount} and summary=${summary}`);
     return false;
