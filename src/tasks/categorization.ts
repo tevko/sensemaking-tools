@@ -327,24 +327,6 @@ export function findMissingComments(
 }
 
 /**
- * Parses a JSON string representing topics into an array of Topic objects.
- *
- * @param topicsJsonString The JSON string to parse.
- * @returns An array of Topic objects.
- * @throws An error if the input is not a valid JSON string representing an array of Topic objects.
- */
-export function parseTopicsJson(topicsJsonString: string): Topic[] {
-  try {
-    return JSON.parse(topicsJsonString);
-  } catch (error) {
-    throw new Error(
-      `Invalid topics JSON string. Please provide a valid JSON array of Topic objects,
-      JSON parse error: ${error}`
-    );
-  }
-}
-
-/**
  * Processes the categorized comments, validating them and updating the categorized and uncategorized arrays.
  *
  * @param commentRecords The newly categorized comments from the LLM.
