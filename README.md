@@ -14,7 +14,7 @@ Please see these [docs](https://jigsaw-code.github.io/sensemaking-tools) for a f
 
 ### LLMs Used and Custom Models
 
-This library is implemented using Google Cloud’s [VertexAI](https://cloud.google.com/vertex-ai). This means the library can be set up to use any model available on VertexAI’s Google Cloud’s [Model Garden](https://cloud.google.com/vertex-ai/generative-ai/docs/model-garden/explore-models), including the latest Gemini models, the open source model Gemma, and other models like Llama and Claude (full list [here](https://pantheon.corp.google.com/vertex-ai/model-garden)). The access and quota requirements are controlled by a user’s Google Cloud account.
+This library is implemented using Google Cloud’s [VertexAI](https://cloud.google.com/vertex-ai). This means the library can be set up to use any model available on VertexAI’s Google Cloud’s [Model Garden](https://cloud.google.com/vertex-ai/generative-ai/docs/model-garden/explore-models), including the latest Gemini models, the open source model Gemma, and other models like Llama and Claude (full list [here](https://cloud.google.com/model-garden)). The access and quota requirements are controlled by a user’s Google Cloud account.
 
 In addition to models available through VertexAI’s Model Garden, users can integrate custom models using the library’s `Model` abstraction. This can be done by implementing a class with only two methods, one for generating plain text and one for generating structured data ([docs](https://jigsaw-code.github.io/sensemaking-tools/classes/models_model.Model.html) for methods). This allows for the library to be used with models not available in the Model Garden, with other cloud providers, and even with on-premise infrastructure for complete data sovereignty.
 
