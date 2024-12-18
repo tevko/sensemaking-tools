@@ -97,6 +97,8 @@ export class Sensemaker {
     topics?: Topic[],
     additionalInstructions?: string
   ): Promise<Summary> {
+    const startTime = performance.now();
+
     // categories are required for summarization - make sure comments are categorized
     if (comments.length > 0 && !comments[0].topics) {
       if (!topics) {
@@ -132,7 +134,9 @@ export class Sensemaker {
       [summaryStats, summarizationType]
     );
 
-    return groundSummary(this.getModel("groundingModel"), summary, comments);
+    const groundedSummary = await groundSummary(this.getModel("groundingModel"), summary, comments);
+    console.log(`Summarization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
+    return groundedSummary;
   }
 
   /**
@@ -151,6 +155,8 @@ export class Sensemaker {
     topics?: Topic[],
     additionalInstructions?: string
   ): Promise<Topic[]> {
+    const startTime = performance.now();
+
     const instructions = generateTopicModelingPrompt(includeSubtopics, topics);
 
     // surround each comment by triple backticks to avoid model's confusion with single, double quotes and new lines
@@ -166,6 +172,9 @@ export class Sensemaker {
         )) as Topic[];
       },
       function (response: Topic[]): boolean {
+        console.log(
+          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`
+        );
         return learnedTopicsValid(response, topics);
       },
       MAX_RETRIES,
@@ -190,6 +199,8 @@ export class Sensemaker {
     topics?: Topic[],
     additionalInstructions?: string
   ): Promise<Comment[]> {
+    const startTime = performance.now();
+
     if (!topics) {
       topics = await this.learnTopics(
         comments,
@@ -223,6 +234,8 @@ export class Sensemaker {
       categorized.push(...categorizedBatch);
     }
 
-    return hydrateCommentRecord(categorized, comments);
+    const categorizedComments = hydrateCommentRecord(categorized, comments);
+    console.log(`Categorization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
+    return categorizedComments;
   }
 }

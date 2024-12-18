@@ -69,7 +69,10 @@ export class VertexModel extends Model {
 
     const response = await streamingResp.response;
     if (response.candidates![0].content.parts[0].text) {
-      return response.candidates![0].content.parts[0].text;
+      const responseText = response.candidates![0].content.parts[0].text;
+      console.log(`Input token count: ${response.usageMetadata?.promptTokenCount}`);
+      console.log(`Output token count: ${response.usageMetadata?.candidatesTokenCount}`);
+      return responseText;
     } else {
       console.warn("Malformed response: ", response);
       throw new Error("Error from Generative Model, response: " + response);
@@ -197,5 +200,7 @@ export async function generateJSON(prompt: string, model: GenerativeModel): Prom
   );
 
   const responseText: string = response.candidates![0].content.parts[0].text!;
+  console.log(`Input token count: ${response.usageMetadata?.promptTokenCount}`);
+  console.log(`Output token count: ${response.usageMetadata?.candidatesTokenCount}`);
   return JSON.parse(responseText);
 }
