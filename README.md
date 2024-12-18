@@ -52,7 +52,7 @@ Then to log in locally run:
 
 Summarize Seattle’s $15 Minimum Wage Conversation.
 
-```
+```py
 // Set up the tools to use the default Vertex model (Gemini Pro 1.5) and related authentication info.
 const mySensemaker = new Sensemaker({
   defaultModel: new VertexModel(
