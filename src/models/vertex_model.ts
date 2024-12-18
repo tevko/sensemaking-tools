@@ -26,6 +26,7 @@ import {
 import { Model } from "./model";
 import { checkDataSchema } from "../types";
 import { TSchema, Static } from "@sinclair/typebox";
+import { retryCall } from "../sensemaker_utils";
 
 /**
  * Class to interact with models available through Google Cloud's Model Garden.
@@ -144,7 +145,13 @@ export const MAX_RETRIES = 3;
 // How long in miliseconds to wait between API calls.
 export const RETRY_DELAY_MS = 2000; // 2 seconds. TODO: figure out how to set it to zero for tests
 
-function getRequest(prompt: string) {
+type Request = {
+  contents: {
+    role: string;
+    parts: { text: string }[];
+  }[];
+};
+function getRequest(prompt: string): Request {
   return {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
   };
@@ -165,41 +172,30 @@ function getRequest(prompt: string) {
 // eslint-disable-next-line  @typescript-eslint/no-explicit-any
 export async function generateJSON(prompt: string, model: GenerativeModel): Promise<any[]> {
   const req = getRequest(prompt);
-  let streamingResp;
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      streamingResp = await model.generateContentStream(req);
-      break; // Exit loop if successful
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message.includes("429 Too Many Requests") ||
-          error.message.includes("RESOURCE_EXHAUSTED")) &&
-        attempt < MAX_RETRIES
-      ) {
-        console.warn(
-          `Rate limit error, attempt ${attempt}. Retrying in ${RETRY_DELAY_MS / 1000} seconds...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-      } else {
-        console.error("Error during generateJSON:", error);
-        throw error;
+  const response = await retryCall(
+    async function (request: Request) {
+      return (await model.generateContentStream(request)).response;
+    },
+    // Check if the response exists and contains a text field.
+    function (response): boolean {
+      if (!response) {
+        console.error("Failed to get a model response.");
+        return false;
       }
-    }
-  }
+      if (!response.candidates![0].content.parts[0].text) {
+        console.error(`Model returned a malformed response: ${response}`);
+        return false;
+      }
+      return true;
+    },
+    MAX_RETRIES,
+    "Failed to get a valid model response.",
+    RETRY_DELAY_MS,
+    [req],
+    []
+  );
 
-  if (!streamingResp) {
-    throw new Error("Failed to get a model response after multiple retries.");
-  }
-
-  const response = await streamingResp.response;
-
-  if (response.candidates![0].content.parts[0].text) {
-    const responseText = response.candidates![0].content.parts[0].text;
-    return JSON.parse(responseText);
-  } else {
-    console.warn("Malformed response: ", response);
-    throw new Error("Error from Generative Model, response: " + response);
-  }
+  const responseText: string = response.candidates![0].content.parts[0].text!;
+  return JSON.parse(responseText);
 }

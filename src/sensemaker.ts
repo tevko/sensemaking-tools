@@ -15,7 +15,7 @@
 // Module to interact with sensemaking tools.
 
 import { generateTopicModelingPrompt, learnedTopicsValid } from "./tasks/topic_modeling";
-import { MAX_RETRIES, RETRY_DELAY_MS } from "./models/vertex_model";
+import { MAX_RETRIES } from "./models/vertex_model";
 import {
   CommentRecord,
   Comment,
@@ -27,51 +27,12 @@ import {
 } from "./types";
 import { categorizeWithRetry, generateCategorizationPrompt } from "./tasks/categorization";
 import { summarizeByType } from "./tasks/summarization";
-import { getPrompt, hydrateCommentRecord } from "./sensemaker_utils";
+import { getPrompt, hydrateCommentRecord, retryCall } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
 import { groundSummary } from "./validation/grounding";
 import { SummaryStats } from "./stats_util";
 import { summaryContainsStats } from "./validation/stats_checker";
-
-/**
- * Rerun a function multiple times.
- * @param func the function to attempt
- * @param isValid checks that the response from func is valid
- * @param maxRetries the maximum number of times to retry func
- * @param errorMsg the error message to throw
- * @param retryDelayMS how long to wait in miliseconds between calls
- * @param funcArgs the args for func and isValid
- * @param isValidArgs the args for isValid
- * @returns the valid response from func
- */
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-async function retryCall<T>(
-  func: (...args: any[]) => Promise<T>,
-  isValid: (response: T, ...args: any[]) => boolean,
-  maxRetries: number,
-  errorMsg: string,
-  retryDelayMS: number = RETRY_DELAY_MS,
-  funcArgs: any[],
-  isValidArgs: any[]
-) {
-  /* eslint-enable  @typescript-eslint/no-explicit-any */
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const response = await func(...funcArgs);
-      if (isValid(response, ...isValidArgs)) {
-        return response;
-      }
-      console.error(`Attempt ${attempt} failed. Invalid response:`, response);
-    } catch (error) {
-      console.error(`Attempt ${attempt} failed:`, error);
-    }
-
-    console.log(`Retrying in ${retryDelayMS / 1000} seconds`);
-    await new Promise((resolve) => setTimeout(resolve, retryDelayMS));
-  }
-  throw new Error(`Failed after ${maxRetries} attempts: ${errorMsg}`);
-}
 
 // Class to make sense of a deliberation. Uses LLMs to learn what topics were discussed and
 // categorize comments. Then these categorized comments can be used with optional Vote data to

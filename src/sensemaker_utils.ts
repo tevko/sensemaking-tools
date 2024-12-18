@@ -15,6 +15,47 @@
 // Simple utils.
 
 import { CommentRecord, Comment } from "./types";
+import { RETRY_DELAY_MS } from "./models/vertex_model";
+
+/**
+ * Rerun a function multiple times.
+ * @param func the function to attempt
+ * @param isValid checks that the response from func is valid
+ * @param maxRetries the maximum number of times to retry func
+ * @param errorMsg the error message to throw
+ * @param retryDelayMS how long to wait in miliseconds between calls
+ * @param funcArgs the args for func and isValid
+ * @param isValidArgs the args for isValid
+ * @returns the valid response from func
+ */
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+export async function retryCall<T>(
+  func: (...args: any[]) => Promise<T>,
+  isValid: (response: T, ...args: any[]) => boolean,
+  maxRetries: number,
+  errorMsg: string,
+  retryDelayMS: number = RETRY_DELAY_MS,
+  funcArgs: any[],
+  isValidArgs: any[]
+) {
+  /* eslint-enable  @typescript-eslint/no-explicit-any */
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await func(...funcArgs);
+      if (isValid(response, ...isValidArgs)) {
+        return response;
+      }
+      console.error(`Attempt ${attempt} failed. Invalid response:`, response);
+    } catch (error) {
+      console.error(`Attempt ${attempt} failed:`, error);
+    }
+
+    console.log(`Retrying in ${retryDelayMS / 1000} seconds`);
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMS));
+  }
+  throw new Error(`Failed after ${maxRetries} attempts: ${errorMsg}`);
+}
+
 /**
  * Combines the data and instructions into a prompt to send to Vertex.
  * @param instructions: what the model should do.
