@@ -19,7 +19,7 @@
 
 import { Type, TSchema, type Static } from "@sinclair/typebox";
 import { TypeCheck, TypeCompiler } from "@sinclair/typebox/compiler";
-import { formatCitations } from "./tasks/grounding";
+import { formatCitations } from "./validation/grounding";
 
 /**
  * TypeBox JSON Schema representation of a single topic record as a name, with no subtopics.

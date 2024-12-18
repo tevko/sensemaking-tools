@@ -30,9 +30,9 @@ import { summarizeByType } from "./tasks/summarization";
 import { getPrompt, hydrateCommentRecord } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
-import { groundSummary } from "./tasks/grounding";
+import { groundSummary } from "./validation/grounding";
 import { SummaryStats } from "./stats_util";
-import { summaryContainsStats } from "./tasks/stats_checker";
+import { summaryContainsStats } from "./validation/stats_checker";
 
 /**
  * Rerun a function multiple times.
