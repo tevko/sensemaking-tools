@@ -2,7 +2,7 @@
 
 ## Overview
 
-Jigsaw’s Sensemaking tools help make sense of large-scale online conversations, leveraging LLMs to categorize comments, and summarize comments and voting patterns to surface actionable insights. There are currently three main functions:
+Jigsaw’s [Sensemaking tools](https://medium.com/jigsaw/making-sense-of-large-scale-online-conversations-b153340bda55) help make sense of large-scale online conversations, leveraging LLMs to categorize comments, and summarize comments and voting patterns to surface actionable insights. There are currently three main functions:
 
 - **Topic Learning** - identifies topics and optionally subtopics from a set of comments.
 - **Categorization** - sorts comments into topics defined by a user or from the Topic Learning function. Comments can belong to more than one topic.
