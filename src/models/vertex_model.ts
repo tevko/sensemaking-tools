@@ -65,18 +65,36 @@ export class VertexModel extends Model {
    */
   async generateText(prompt: string): Promise<string> {
     const req = getRequest(prompt);
-    const streamingResp = await this.getGenerativeModel().generateContentStream(req);
+    const model = this.getGenerativeModel();
 
-    const response = await streamingResp.response;
-    if (response.candidates![0].content.parts[0].text) {
-      const responseText = response.candidates![0].content.parts[0].text;
-      console.log(`Input token count: ${response.usageMetadata?.promptTokenCount}`);
-      console.log(`Output token count: ${response.usageMetadata?.candidatesTokenCount}`);
-      return responseText;
-    } else {
-      console.warn("Malformed response: ", response);
-      throw new Error("Error from Generative Model, response: " + response);
-    }
+    const response = await retryCall(
+      // call LLM
+      async function (request: Request, model: GenerativeModel) {
+        return (await model.generateContentStream(request)).response;
+      },
+      // Check if the response exists and contains a text field.
+      function (response): boolean {
+        if (!response) {
+          console.error("Failed to get a model response.");
+          return false;
+        }
+        if (!response.candidates![0].content.parts[0].text) {
+          console.error(`Model returned a malformed response: ${response}`);
+          return false;
+        }
+        return true;
+      },
+      MAX_RETRIES,
+      "Failed to get a valid model response.",
+      RETRY_DELAY_MS,
+      [req, model], // Arguments for the LLM call
+      [] // Arguments for the validator function
+    );
+
+    const responseText = response.candidates![0].content.parts[0].text!;
+    console.log(`Input token count: ${response.usageMetadata?.promptTokenCount}`);
+    console.log(`Output token count: ${response.usageMetadata?.candidatesTokenCount}`);
+    return responseText;
   }
 
   /**
@@ -177,6 +195,7 @@ export async function generateJSON(prompt: string, model: GenerativeModel): Prom
   const req = getRequest(prompt);
 
   const response = await retryCall(
+    // call LLM
     async function (request: Request) {
       return (await model.generateContentStream(request)).response;
     },
@@ -195,8 +214,8 @@ export async function generateJSON(prompt: string, model: GenerativeModel): Prom
     MAX_RETRIES,
     "Failed to get a valid model response.",
     RETRY_DELAY_MS,
-    [req],
-    []
+    [req], // Arguments for the LLM call
+    [] // Arguments for the validator function
   );
 
   const responseText: string = response.candidates![0].content.parts[0].text!;
