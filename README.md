@@ -52,7 +52,7 @@ Then to log in locally run:
 
 Summarize Seattle’s $15 Minimum Wage Conversation.
 
-```
+```js
 // Set up the tools to use the default Vertex model (Gemini Pro 1.5) and related authentication info.
 const mySensemaker = new Sensemaker({
   defaultModel: new VertexModel(
@@ -63,19 +63,31 @@ const mySensemaker = new Sensemaker({
 
 // Note: this function does not exist.
 // Get data from a discussion in Seattle over a $15 minimum wage.
-// CSV containing comment text, vote counts, and group information from: // https://github.com/compdemocracy/openData/tree/master/15-per-hour-seattle
+// CSV containing comment text, vote counts, and group information from:
+// https://github.com/compdemocracy/openData/tree/master/15-per-hour-seattle
 const comments: Comments[] = getCommentsFromCsv("./comments.csv");
 
 // Learn what topics were discussed and print them out.
-const topics = mySensemaker.learnTopics(comments, true, // should include subtopics
-    undefined, // there are no existing topics
-    "This is from a conversation on a $15 minimum wage in Seattle" // additional context
+const topics = mySensemaker.learnTopics(
+  comments,
+  // Should include subtopics:
+  true,
+  // There are no existing topics:
+  undefined,
+  // Additional context:
+  "This is from a conversation on a $15 minimum wage in Seattle"
 );
 console.log(topics);
 
 // Summarize the conversation and print the result as Markdown.
-const summary = mySensemaker.summarize(comments, SummarizationType.VOTE_TALLY, // there's vote information so vote tally summarization is the best summarization method to use.
-topics, "This is from a conversation on a $15 minimum wage in Seattle" // additional context);
+const summary = mySensemaker.summarize(
+  comments,
+  // There's vote information so vote tally summarization is the best summarization method to use:
+  SummarizationType.VOTE_TALLY,
+  topics,
+  // Additional context:
+  "This is from a conversation on a $15 minimum wage in Seattle" 
+);
 console.log(summary.getText("MARKDOWN"));
 ```
 
