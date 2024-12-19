@@ -16,8 +16,9 @@
 
 import { Model } from "../models/model";
 import { Comment, SummarizationType } from "../types";
-import { getPrompt } from "../sensemaker_utils";
+import { getPrompt, retryCall } from "../sensemaker_utils";
 import { SummaryStats, TopicStats } from "../stats_util";
+import { MAX_RETRIES } from "../models/vertex_model";
 
 export function getSummarizationInstructions(
   includeGroups: boolean,
@@ -123,14 +124,13 @@ export async function basicSummarize(
   model: Model,
   additionalInstructions?: string
 ): Promise<string> {
-  const commentTexts = summaryStats.comments.map((comment) => comment.text);
-  return await model.generateText(
-    getPrompt(
-      getSummarizationInstructions(false, summaryStats),
-      commentTexts,
-      additionalInstructions
-    )
+  const prompt = getPrompt(
+    getSummarizationInstructions(false, summaryStats),
+    summaryStats.comments.map((c) => c.text),
+    additionalInstructions
   );
+
+  return retryGenerateSummary(model, prompt);
 }
 
 /**
@@ -157,12 +157,39 @@ export async function voteTallySummarize(
   model: Model,
   additionalInstructions?: string
 ): Promise<string> {
-  return await model.generateText(
-    getPrompt(
-      getSummarizationInstructions(true, summaryStats),
-      formatCommentsWithVotes(summaryStats.comments),
-      additionalInstructions
-    )
+  const prompt = getPrompt(
+    getSummarizationInstructions(true, summaryStats),
+    formatCommentsWithVotes(summaryStats.comments),
+    additionalInstructions
+  );
+
+  return retryGenerateSummary(model, prompt);
+}
+
+/**
+ * Helper function to encapsulate the retry logic.
+ *
+ * @param model The LLM to use for summarization.
+ * @param prompt The prompt to provide to the LLM.
+ * @returns A Promise that resolves to the generated summary string, or rejects with an error if a valid summary could not be generated after multiple retries.
+ */
+export async function retryGenerateSummary(model: Model, prompt: string): Promise<string> {
+  return retryCall(
+    // LLM call
+    async (model: Model, prompt: string) => model.generateText(prompt),
+    // summary validation function
+    (summary: string) => {
+      return (
+        summary.includes("## Conclusion") &&
+        !summary.includes("]],^[") && // punctuation should be within brackets, like: ",]]^["
+        !summary.includes("]].^[")
+      );
+    },
+    MAX_RETRIES,
+    "Generated summary is incomplete or has incorrect formatting.",
+    undefined, // no retry delay needed here, as the LLM call take some time anyway
+    [model, prompt], // arguments for the LLM call
+    [] // no additional arguments for the validation - the summary is passed automatically
   );
 }
 

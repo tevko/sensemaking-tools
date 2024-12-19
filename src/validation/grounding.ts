@@ -16,6 +16,7 @@
 
 import { Comment, Summary, SummaryChunk } from "../types";
 import { Model } from "../models/model";
+import { retryGenerateSummary } from "../tasks/summarization";
 
 function formatComments(comments: Comment[]): string {
   return (
@@ -340,21 +341,28 @@ export async function groundSummary(
 ): Promise<Summary> {
   // Run each of the grounding prompts in turn, to produce a final grounded summary.
   console.log("\n## Initiating grounding routine");
+
   // Identify and demarcate claims.
-  const identifyClaimsResult = await model.generateText(identifyClaimsPrompt(summary));
+  const identifyClaimsResult = await retryGenerateSummary(model, identifyClaimsPrompt(summary));
   diffLogger("## Initial statement tagging:", summary, identifyClaimsResult);
+
   // Assign initial grounding citations.
-  const assignGroundingResult = await model.generateText(
+  const assignGroundingResult = await retryGenerateSummary(
+    model,
     assignGroundingPrompt(identifyClaimsResult, comments)
   );
   diffLogger("## Initial statement grounding:", identifyClaimsResult, assignGroundingResult);
+
   // Verify the grounding citations.
-  const verifyGroundingResult = await model.generateText(
+  const verifyGroundingResult = await retryGenerateSummary(
+    model,
     verifyGroundingPrompt(assignGroundingResult, comments)
   );
   diffLogger("## Grounding verification step:", assignGroundingResult, verifyGroundingResult);
+
   // Finalize the grounding by unverified claims.
-  const finalGroundingResult = await model.generateText(
+  const finalGroundingResult = await retryGenerateSummary(
+    model,
     finalizeGroundingPrompt(verifyGroundingResult)
   );
   diffLogger("## Final grounding results:", verifyGroundingResult, finalGroundingResult);

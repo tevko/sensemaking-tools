@@ -80,16 +80,16 @@ describe("grounding test", () => {
       // to see what the intermediate responses look like, and will be more future proof if additional processing ends
       // up happening between these steps.
       const responseSequence = [
-        "This is a filler text. [[This is a grounded claim.]]^[] [[This one not so much.]]^[]",
-        "This is a filler text. [[This is a grounded claim.]]^[id1,id2] [[This one not so much.]]^[id2]",
-        "This is a filler text. [[This is a grounded claim.]]^[id1] [[This one not so much.]]^[]",
-        "This is a filler text. [[This is a grounded claim.]]^[id1]",
+        "This is a filler text. [[This is a grounded claim.]]^[] [[This one not so much.]]^[] ## Conclusion",
+        "This is a filler text. [[This is a grounded claim.]]^[id1,id2] [[This one not so much.]]^[id2] ## Conclusion",
+        "This is a filler text. [[This is a grounded claim.]]^[id1] [[This one not so much.]]^[] ## Conclusion",
+        "This is a filler text. [[This is a grounded claim.]]^[id1] ## Conclusion",
       ];
       const comments = [
         { id: "id1", text: "A comment backing up the claim" },
         { id: "id2", text: "A comment that might look related but not really" },
       ];
-      const expectedOutput = `This is a filler text. This is a grounded claim.[id1]`;
+      const expectedOutput = `This is a filler text. This is a grounded claim.[id1] ## Conclusion`;
       // Install the mocks and run the grounding
       mockgenerateTextSequence(responseSequence);
       const groundedSummary = await groundSummary(mockModel, inputSummary, comments);
