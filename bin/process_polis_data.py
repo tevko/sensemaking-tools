@@ -91,6 +91,9 @@ for group_id in group_ids:
   comments["agrees"] += comments["group-" + str(group_id) + "-agree-count"]
   comments["passes"] += comments["group-" + str(group_id) + "-pass-count"]
 
+# Leave only those comments that passed moderation.
+comments = comments[comments["moderated"]==1]
+
 # prompt: write out to a CSV file
 comments = comments.rename(columns={'comment-body': 'comment_text'})
 comments.to_csv(args.output_file, index=False)
