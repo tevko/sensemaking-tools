@@ -174,8 +174,7 @@ export class Sensemaker {
       },
       function (response: Topic[]): boolean {
         console.log(
-          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`,
-          JSON.stringify(response)
+          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`
         );
         return learnedTopicsValid(response, topics);
       },
@@ -211,6 +210,8 @@ export class Sensemaker {
         additionalInstructions
       );
     }
+
+    console.log("TOPICS ", topics)
 
     const instructions = generateCategorizationPrompt(topics, includeSubtopics);
 
