@@ -26,6 +26,7 @@ import { formatCitations } from "./validation/grounding";
  */
 export const FlatTopic = Type.Object({
   name: Type.String(),
+  citations: Type.Array(),
 });
 
 /**
@@ -38,6 +39,7 @@ export type FlatTopic = Static<typeof FlatTopic>;
  */
 export const NestedTopic = Type.Object({
   name: Type.String(),
+  citations: Type.Array(),
   subtopics: Type.Array(FlatTopic),
 });
 
