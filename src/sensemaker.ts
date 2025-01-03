@@ -252,7 +252,7 @@ export class Sensemaker {
 
     const categorizedComments = hydrateCommentRecord(categorized, comments);
     console.log(`Categorization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
-    console.log(`Comments: ${JSON.stringify(comments)}`);
+    console.log(`TOPICS: ${JSON.stringify(topics)}`);
     return categorizedComments;
   }
 }
