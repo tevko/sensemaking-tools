@@ -184,7 +184,8 @@ export class Sensemaker {
       },
       function (response: Topic[]): boolean {
         console.log(
-          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`
+          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`,
+          JSON.stringify(response)
         );
         return learnedTopicsValid(response, topics);
       },
@@ -252,7 +253,6 @@ export class Sensemaker {
 
     const categorizedComments = hydrateCommentRecord(categorized, comments);
     console.log(`Categorization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
-    console.log(`TOPICS: ${JSON.stringify(topics)}`);
     return categorizedComments;
   }
 }
