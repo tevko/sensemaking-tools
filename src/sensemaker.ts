@@ -185,8 +185,7 @@ export class Sensemaker {
       },
       function (response: Topic[]): boolean {
         console.log(
-          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`,
-          JSON.stringify(response)
+          `Topic learning took ${(performance.now() - startTime) / (1000 * 60)} minutes.`
         );
         return learnedTopicsValid(response, topics);
       },
@@ -219,6 +218,8 @@ export class Sensemaker {
     if (!topics) {
       topics = await this.learnTopics(comments, includeSubtopics, undefined, additionalContext);
     }
+
+    console.log("TOPICS ", topics)
 
     const instructions = generateCategorizationPrompt(topics, includeSubtopics);
 
