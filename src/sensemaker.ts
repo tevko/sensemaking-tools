@@ -161,6 +161,7 @@ export class Sensemaker {
 
     // surround each comment by triple backticks to avoid model's confusion with single, double quotes and new lines
     const commentTexts = comments.map((comment) => "```" + comment.text + ` [${comment.id}]` + "```");
+    console.log(`COMMENT TEXT: ${commentTexts}`)
     // decide which schema to use based on includeSubtopics
     const schema = Type.Array(includeSubtopics ? NestedTopic : FlatTopic);
 

@@ -25,7 +25,7 @@ Important Considerations:
 - Treat triple backticks (\`\`\`) as the boundaries between individual comments, ensuring each comment is encapsulated within them.
 - Use Title Case for topic names.
 - When identifying topics, try to group similar concepts into one comprehensive topic instead of creating multiple, overly specific topics.
-- Citations must be present and match comment ID's
+- Citations must be present and match comment ID's, which will be present alongside comment text. "[12]"
 - Citations must map back to comments who's topics match the text of the comment.
 `;
 
@@ -42,7 +42,7 @@ const IMPORTANT_CONSIDERATIONS = `
 `;
 
 export const LEARN_TOPICS_AND_SUBTOPICS_PROMPT = `
-Identify a 2-tiered hierarchical topic modeling of the following comments. Use the ID of the comments as citations.
+Identify a 2-tiered hierarchical topic modeling of the following comments. Use the ID of the comments as citations. The ID will follow the comment text in brackets, e.g "[12]"
 
 Important Considerations:
 ${IMPORTANT_CONSIDERATIONS}
