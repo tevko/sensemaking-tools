@@ -160,7 +160,7 @@ export class Sensemaker {
     const instructions = generateTopicModelingPrompt(includeSubtopics, topics);
 
     // surround each comment by triple backticks to avoid model's confusion with single, double quotes and new lines
-    const commentTexts = comments.map((comment) => "```" + comment.text + "```");
+    const commentTexts = comments.map((comment) => "```" + comment.text + ` [${comment.id}]` + "```");
     // decide which schema to use based on includeSubtopics
     const schema = Type.Array(includeSubtopics ? NestedTopic : FlatTopic);
 
