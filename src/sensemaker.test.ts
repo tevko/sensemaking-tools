@@ -38,14 +38,14 @@ describe("SensemakerTest", () => {
         { id: "1", text: "Comment 1" },
         { id: "2", text: "Comment 2" },
       ];
-      const topics = [{ name: "Topic 1" }];
+      const topics = [{ name: "Topic 1", citations: [1] }];
       const includeSubtopics = false;
       mockGenerateData
         .mockReturnValueOnce(
           Promise.resolve([
             {
               id: "1",
-              topics: [{ name: "Topic 1" }],
+              topics: [{ name: "Topic 1", citations: [1] }],
             },
           ])
         )
@@ -53,7 +53,7 @@ describe("SensemakerTest", () => {
           Promise.resolve([
             {
               id: "2",
-              topics: [{ name: "Topic 1" }],
+              topics: [{ name: "Topic 1", citations: [1] }],
             },
           ])
         );
@@ -72,12 +72,12 @@ describe("SensemakerTest", () => {
         {
           id: "1",
           text: "Comment 1",
-          topics: [{ name: "Topic 1" }],
+          topics: [{ name: "Topic 1", citations: [1] }],
         },
         {
           id: "2",
           text: "Comment 2",
-          topics: [{ name: "Topic 1" }],
+          topics: [{ name: "Topic 1", citations: [1] }],
         },
       ];
       expect(actualComments).toEqual(expected);
@@ -92,16 +92,21 @@ describe("SensemakerTest", () => {
         { id: "3", text: "Another comment about Roads" },
       ];
       const includeSubtopics = true;
-      const topics = [{ name: "Infrastructure" }, { name: "Environment" }];
+      const topics = [
+        { name: "Infrastructure", citations: [1] },
+        { name: "Environment", citations: [1] },
+      ];
 
       const validResponse = [
         {
           name: "Infrastructure",
-          subtopics: [{ name: "Roads" }],
+          subtopics: [{ name: "Roads", citations: [1] }],
+          citations: [1],
         },
         {
           name: "Environment",
-          subtopics: [{ name: "Parks" }],
+          subtopics: [{ name: "Parks", citations: [1] }],
+          citations: [1],
         },
       ];
 
@@ -112,11 +117,13 @@ describe("SensemakerTest", () => {
           Promise.resolve([
             {
               name: "Infrastructure",
-              subtopics: [{ name: "Roads" }, { name: "Environment" }],
+              subtopics: [{ name: "Roads" }, { name: "Environment", citations: [1] }],
+              citations: [1],
             },
             {
               name: "Environment",
-              subtopics: [{ name: "Parks" }],
+              subtopics: [{ name: "Parks", citations: [1] }],
+              citations: [1],
             },
           ])
         )
@@ -139,16 +146,21 @@ describe("SensemakerTest", () => {
         { id: "3", text: "Another comment about Roads" },
       ];
       const includeSubtopics = true;
-      const topics = [{ name: "Infrastructure" }, { name: "Environment" }];
+      const topics = [
+        { name: "Infrastructure", citations: [1] },
+        { name: "Environment", citations: [1] },
+      ];
 
       const validResponse = [
         {
           name: "Infrastructure",
-          subtopics: [{ name: "Roads" }],
+          subtopics: [{ name: "Roads", citations: [1] }],
+          citations: [1],
         },
         {
           name: "Environment",
-          subtopics: [{ name: "Parks" }],
+          subtopics: [{ name: "Parks", citations: [1] }],
+          citations: [1],
         },
       ];
 
@@ -159,15 +171,18 @@ describe("SensemakerTest", () => {
           Promise.resolve([
             {
               name: "Infrastructure",
-              subtopics: [{ name: "Roads" }],
+              subtopics: [{ name: "Roads", citations: [1] }],
+              citations: [1],
             },
             {
               name: "Environment",
-              subtopics: [{ name: "Parks" }],
+              subtopics: [{ name: "Parks", citations: [1] }],
+              citations: [1],
             },
             {
               name: "Economy",
               subtopics: [],
+              citations: [1],
             },
           ])
         )
