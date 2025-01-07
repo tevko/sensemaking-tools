@@ -70,17 +70,17 @@ describe("StatsUtilTest", () => {
       {
         id: "1",
         text: "comment 1",
-        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] },],
       },
       {
         id: "2",
         text: "comment 2",
-        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] },],
       },
       {
         id: "3",
         text: "comment 3",
-        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2" }] }],
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2", citations: [1] }], citations: [1] },],
       },
     ];
 

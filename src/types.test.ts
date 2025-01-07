@@ -81,9 +81,9 @@ describe("Types Test", () => {
   });
 
   it("Valid Topics should pass isTopicType", () => {
-    expect(isTopicType({ name: "Test Topic" })).toBeTruthy();
+    expect(isTopicType({ name: "Test Topic", citations: [1] })).toBeTruthy();
     expect(
-      isTopicType({ name: "Test Topic", subtopics: [{ name: "Test Subtopic" }] })
+      isTopicType({ name: "Test Topic", citations: [1], subtopics: [{ name: "Test Subtopic", citations: [2] }] })
     ).toBeTruthy();
   });
 
