@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "sso://participation-project-internal/participation-project"
+    "url": "https://github.com/tevko/sensemaking-tools"
   },
   "keywords": [],
   "author": "",
