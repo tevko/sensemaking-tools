@@ -51,5 +51,8 @@
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
     "*.{js,jsx,ts,tsx}": "prettier --write"
+  },
+  "publishConfig": {
+    "@tevko:registry": "https://npm.pkg.github.com"
   }
 }
