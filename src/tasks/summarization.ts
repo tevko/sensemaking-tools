@@ -43,9 +43,11 @@ Use categories or subcategories names exactly as they are provided (for example:
 Your task is to write a summary for each section, taking into account the opinions of the groups, including minority viewpoints.
 
 First explain the perspectives of each group, highlighting common ground and points of division.
-Then, for areas of disagreement, analyze comments to see if there's a solution backed by the statements, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the statements.
-Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the statements.
-The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the deliberation statements.
+- If vote tallies per each group are included in the comment data, pay attention to not just the content of the comments in relation to the summary claims, but also to whether the claims accurately reflect the vote breakdown by each group.
+- If there is a group with high number of disagree votes on the claim, do not state that there is strong or widespread support or high consensus. You goal is to avoid misrepresentation of group's opinion based on the group's votes.
+Then, for areas of disagreement, analyze comments to see if there's a solution backed by the comments, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the comments.
+Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the comments.
+The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the deliberation comments.
 
 Do not generate:
 - Generic summaries (e.g., "There was discussion about ...")
@@ -72,18 +74,20 @@ ${includeGroups ? "## Description of Groups" : ""}
 ## Conclusion
 
 The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
-The first sentence should include the information that there were ${commentCount} comments ${includeGroups ? `that had ${voteCount} votes` : ""}.
-The second sentence should include what topics were discussed. 
+The first sentence should include the information that there were ${commentCount} comments ${includeGroups ? `that had ${voteCount} votes` : ""}. Make the phrase **N comments** ${includeGroups ? "and **M votes**" : ""} bold by wrapping them in double asterisks "**".
+The second sentence should include what topics were discussed.
 ${
   includeGroups
-    ? "The third sentence should include information on the groups such " +
+    ? "The third sentence should include information on the groups identified based on the deliberation data such " +
       "as their similarities and differences. "
     : ""
-} 
+}
 The next sentence should list topics with consensus.
 The last sentence should list topics without consensus.
 
-${includeGroups ? "There should be a one-paragraph section describing the voting groups, focusing on their expressed views without guessing demographics." : ""}
+If group vote data is available, include a one-paragraph section describing the voting groups, using the provided group names. Focus on the groups' expressed views and opinions as reflected in the comments and votes, without speculating about demographics. Avoid politically charged classifications (e.g., "conservative," "liberal", or "progressive"). Instead, describe each group based on their demonstrated preferences within the deliberation (e.g., "Group A favored X, while Group B prioritized Y"). Frame the entire summary around the perspectives of these groups, indicating for each claim whether the groups agree or disagree.
+
+Within the high/low consensus summary list out the specific issues and make them bold (by wrapping them in double asterisks "**"), e.g. "**Developing the riverfront**", to make those proposals more clear and help spot the relative priority or consensus of specific issues more easily at a glance.
 `;
 }
 
