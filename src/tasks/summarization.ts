@@ -20,6 +20,39 @@ import { getPrompt, retryCall } from "../sensemaker_utils";
 import { SummaryStats, TopicStats } from "../stats_util";
 import { MAX_RETRIES } from "../models/vertex_model";
 
+/**
+ * Create an intro paragraph formatted in markdown with statistics.
+ *
+ * @param commentCount the number of comments in the deliberation
+ * @param voteCount the number of votes in the deliberation
+ * @param quantifiedTopics the topics and subtopics with the comment count information and ordered
+ * by size
+ * @returns a intro paragraph in markdown
+ */
+export function _getIntroText(
+  commentCount: number,
+  voteCount: number,
+  quantifiedTopics: { [key: string]: string[] }
+): string {
+  const commentCountFormatted = commentCount.toLocaleString();
+  const voteCountFormatted = voteCount.toLocaleString();
+  let text =
+    `This report summarizes the results of public input, encompassing ` +
+    `__${commentCountFormatted} comments__ and ` +
+    `${voteCount > 0 ? `__${voteCountFormatted} votes__` : ""}. All voters were anonymous. The ` +
+    `public input collected covered a wide range of topics and subtopics, including:\n`;
+
+  for (const topicName in quantifiedTopics) {
+    text += " * __" + topicName + "__\n";
+    const subtopicNames = quantifiedTopics[topicName];
+    const subtopicText = "     * " + subtopicNames.join(", ") + "\n";
+    // Remove the substring "comments" from the list of subtopics for conciseness.
+    text += subtopicText.replace(/ comments/g, "");
+  }
+
+  return text;
+}
+
 export function getSummarizationInstructions(
   includeGroups: boolean,
   summaryStats: SummaryStats
@@ -30,8 +63,11 @@ export function getSummarizationInstructions(
   const sortedTopics = _sortTopicsByComments(topicStats);
   const quantifiedTopics = _quantifyTopicNames(sortedTopics);
 
-  const commentCount = summaryStats.commentCount.toLocaleString();
-  const voteCount = summaryStats.voteCount.toLocaleString();
+  const introText = _getIntroText(
+    summaryStats.commentCount,
+    summaryStats.voteCount,
+    quantifiedTopics
+  );
 
   return `You’re analyzing the results of a public deliberation on a topic. It contains comments and associated votes.
 You will summarize with the summary having all of the following categories and subcategories:
@@ -73,17 +109,7 @@ ${includeGroups ? "## Description of Groups" : ""}
     * _Low consensus:_
 ## Conclusion
 
-The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
-The first sentence should include the information that there were ${commentCount} comments ${includeGroups ? `that had ${voteCount} votes` : ""}. Make the phrase **N comments** ${includeGroups ? "and **M votes**" : ""} bold by wrapping them in double asterisks "**".
-The second sentence should include what topics were discussed.
-${
-  includeGroups
-    ? "The third sentence should include information on the groups identified based on the deliberation data such " +
-      "as their similarities and differences. "
-    : ""
-}
-The next sentence should list topics with consensus.
-The last sentence should list topics without consensus.
+Please use this text for the Intro section: ${introText}
 
 If group vote data is available, include a one-paragraph section describing the voting groups, using the provided group names. Focus on the groups' expressed views and opinions as reflected in the comments and votes, without speculating about demographics. Avoid politically charged classifications (e.g., "conservative," "liberal", or "progressive"). Instead, describe each group based on their demonstrated preferences within the deliberation (e.g., "Group A favored X, while Group B prioritized Y"). Frame the entire summary around the perspectives of these groups, indicating for each claim whether the groups agree or disagree.
 

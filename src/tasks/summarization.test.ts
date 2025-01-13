@@ -17,6 +17,7 @@ import {
   getSummarizationInstructions,
   _sortTopicsByComments,
   _quantifyTopicNames,
+  _getIntroText,
 } from "./summarization";
 
 const TEST_COMMENTS = [
@@ -70,13 +71,23 @@ describe("SummaryTest", () => {
   });
 
   it("prompt shouldn't include votes if groups aren't included", () => {
+    const testCommentsWithoutVotes = [
+      {
+        id: "1",
+        text: "comment1",
+      },
+      {
+        id: "2",
+        text: "comment2",
+      },
+    ];
     // Has 2 comments and 55 votes.
-    expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).toContain(
-      "2 comments"
-    );
-    expect(getSummarizationInstructions(false, new SummaryStats(TEST_COMMENTS))).not.toContain(
-      "55 votes"
-    );
+    expect(
+      getSummarizationInstructions(false, new SummaryStats(testCommentsWithoutVotes))
+    ).toContain("2 comments");
+    expect(
+      getSummarizationInstructions(false, new SummaryStats(testCommentsWithoutVotes))
+    ).not.toContain("55 votes");
   });
 
   it("should format comments with vote tallies via formatCommentsWithVotes", () => {
@@ -162,5 +173,20 @@ describe("SummaryTest", () => {
     };
 
     expect(_quantifyTopicNames(topicStats)).toEqual(expectedQuantified);
+  });
+
+  it("should create an intro section", () => {
+    expect(
+      _getIntroText(100, 321, {
+        "Topic A (5 comments)": ["Subtopic A.1 (2 comments)", "Subtopic A.2 (3 comments)"],
+        "Topic B (3 comments)": ["Subtopic B.1 (2 comments)", "Subtopic B.2 (1 comments)"],
+      })
+    )
+      .toEqual(`This report summarizes the results of public input, encompassing __100 comments__ and __321 votes__. All voters were anonymous. The public input collected covered a wide range of topics and subtopics, including:
+ * __Topic A (5 comments)__
+     * Subtopic A.1 (2), Subtopic A.2 (3)
+ * __Topic B (3 comments)__
+     * Subtopic B.1 (2), Subtopic B.2 (1)
+`);
   });
 });
