@@ -36,9 +36,16 @@ export function runMonitoringChecks(
 ) {
   const csvWriter = createObjectCsvWriter({
     path: outputDir + "/" + MONITORING_CHECKS_FILE_NAME,
-    header: ["evalName", "performance"],
+    header: [
+      { id: "evalName", title: "Evaluation Name" },
+      { id: "performance", title: "Performance" },
+    ],
   });
   const output = [
+    {
+      evalName: "Run count",
+      performance: rerunCount - failureCount,
+    },
     {
       evalName: "Rate of failure for summarization",
       performance: failureCount / rerunCount,

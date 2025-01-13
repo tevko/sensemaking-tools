@@ -15,7 +15,7 @@
 // Library for running quick checks on summarization.
 
 import { createObjectCsvWriter } from "csv-writer";
-import { Summary, Topic } from "../src/types";
+import { Topic } from "../src/types";
 
 const QUICK_CHECKS_FILE_NAME = "quickChecks.csv";
 
@@ -29,9 +29,9 @@ function containsString(summary: string, str: string): boolean {
  * @param str the substring to look for in the summary
  * @returns the percentage of summaries that contain an intro section.
  */
-export function getPercentageContainsString(summaries: Summary[], str: string): number {
-  const containsIntroCount = summaries.reduce((accumulator, summary: Summary) => {
-    return accumulator + Number(containsString(summary.getText("MARKDOWN"), str));
+export function getPercentageContainsString(summaries: string[], str: string): number {
+  const containsIntroCount = summaries.reduce((accumulator, summary: string) => {
+    return accumulator + Number(containsString(summary, str));
   }, 0);
   return (containsIntroCount / summaries.length) * 100;
 }
@@ -54,13 +54,13 @@ export function getSubtopicNames(topics: Topic[]): string[] {
 }
 
 export function getPercentageContainsStrings(
-  summaries: Summary[],
+  summaries: string[],
   expectedMatches: string[]
 ): number {
   let matchCount = 0;
   for (const summary of summaries) {
     for (const expectedMatch of expectedMatches) {
-      matchCount += Number(containsString(summary.getText("MARKDOWN"), expectedMatch));
+      matchCount += Number(containsString(summary, expectedMatch));
     }
   }
   return (matchCount / expectedMatches.length / summaries.length) * 100;
@@ -76,10 +76,13 @@ export function getPercentageContainsStrings(
  * @param outputDir the directory to output the eval results to.
  * @param summaries the summaries to consider.
  */
-export function runQuickChecks(outputDir: string, summaries: Summary[], topics: Topic[]) {
+export function runQuickChecks(outputDir: string, summaries: string[], topics: Topic[]) {
   const csvWriter = createObjectCsvWriter({
     path: outputDir + "/" + QUICK_CHECKS_FILE_NAME,
-    header: ["evalName", "performance"],
+    header: [
+      { id: "evalName", title: "Evaluation Name" },
+      { id: "performance", title: "Performance" },
+    ],
   });
   const outputTexts = [
     {

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Summary } from "../src/types";
 import {
   getPercentageContainsString,
   getPercentageContainsStrings,
@@ -21,14 +20,8 @@ import {
 
 describe("QuickChecksTest", () => {
   it("Should correctly calculate the % of intros with a summary.", () => {
-    const summaryWithIntro = new Summary(
-      [{ text: "This is the Intro for a summary" }, { text: "The summary is about a city" }],
-      []
-    );
-    const summaryWithoutIntro = new Summary(
-      [{ text: "The summary is about a city" }, { text: "The city is big" }],
-      []
-    );
+    const summaryWithIntro = "This is the Intro for a summary. The summary is about a city";
+    const summaryWithoutIntro = "The summary is about a city. The city is big";
 
     expect(getPercentageContainsString([summaryWithIntro, summaryWithoutIntro], "Intro")).toEqual(
       50
@@ -45,17 +38,9 @@ describe("QuickChecksTest", () => {
   });
 
   it("Should calculate the perecentage of topics in a summary.", () => {
-    const summaryWithAllTopics = new Summary(
-      [
-        { text: "Topic 3: This is the Intro for a summary. Topic 1" },
-        { text: "Topic 2: The summary is about a city " },
-      ],
-      []
-    );
-    const summaryWithOneTopic = new Summary(
-      [{ text: "The summary is about a Topic 2" }, { text: "The city is big" }],
-      []
-    );
+    const summaryWithAllTopics =
+      "Topic 3: This is the Intro for a summary. Topic 1 Topic 2: The summary is about a city ";
+    const summaryWithOneTopic = "The summary is about a Topic 2 The city is big";
 
     // The first summary has all topics (3/3) and the second summary has one topic (1/3). This
     // should average out to 2/3 of topics are included.
