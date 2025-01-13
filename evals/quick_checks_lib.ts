@@ -15,7 +15,7 @@
 // Library for running quick checks on summarization.
 
 import { createObjectCsvWriter } from "csv-writer";
-import { Summary } from "../src/types";
+import { Summary, Topic } from "../src/types";
 
 const QUICK_CHECKS_FILE_NAME = "quickChecks.csv";
 
@@ -37,6 +37,35 @@ export function getPercentageContainsString(summaries: Summary[], str: string): 
 }
 
 /**
+ * Get a list of subtopic names from a Topic object.
+ * @param topics the topics to flatten.
+ */
+export function getSubtopicNames(topics: Topic[]): string[] {
+  const nestedSubtopics: Topic[][] = topics.map((topic: Topic) => {
+    return "subtopics" in topic ? topic.subtopics : [];
+  });
+  const subtopics: Topic[] = nestedSubtopics.reduce(
+    (accumulator, value: Topic[]) => accumulator.concat(value),
+    []
+  );
+  return subtopics.map((topic: Topic): string => {
+    return topic.name;
+  });
+}
+
+export function getPercentageContainsStrings(
+  summaries: Summary[],
+  expectedMatches: string[]
+): number {
+  let matchCount = 0;
+  for (const summary of summaries) {
+    for (const expectedMatch of expectedMatches) {
+      matchCount += Number(containsString(summary.getText("MARKDOWN"), expectedMatch));
+    }
+  }
+  return (matchCount / expectedMatches.length / summaries.length) * 100;
+}
+/**
  * Run a series of simple automated tests.
  *
  * This should be used as a binary check for summarization, and it should pass all tests. Failing
@@ -47,19 +76,32 @@ export function getPercentageContainsString(summaries: Summary[], str: string): 
  * @param outputDir the directory to output the eval results to.
  * @param summaries the summaries to consider.
  */
-export function runQuickChecks(outputDir: string, summaries: Summary[]) {
+export function runQuickChecks(outputDir: string, summaries: Summary[], topics: Topic[]) {
   const csvWriter = createObjectCsvWriter({
     path: outputDir + "/" + QUICK_CHECKS_FILE_NAME,
     header: ["evalName", "performance"],
   });
   const outputTexts = [
     {
-      evalName: "% of Summaries that Contain an Intro Section",
+      evalName: "% of Summaries that Contain an Intro Section (expect 100%)",
       performance: getPercentageContainsString(summaries, "Intro"),
     },
     {
-      evalName: "% of Summaries that Contain a Conclusion Section",
+      evalName: "% of Summaries that Contain a Conclusion Section (expect 100%)",
       performance: getPercentageContainsString(summaries, "Conclusion"),
+    },
+    {
+      evalName: "% of Topics Included in Summary (expect 100%)",
+      performance: getPercentageContainsStrings(
+        summaries,
+        topics.map((topic: Topic): string => {
+          return topic.name;
+        })
+      ),
+    },
+    {
+      evalName: "% of Subtopics Included in Summary (expect 100%)",
+      performance: getPercentageContainsStrings(summaries, getSubtopicNames(topics)),
     },
   ];
 

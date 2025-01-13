@@ -40,7 +40,7 @@
 
 import { Command } from "commander";
 import { createObjectCsvWriter } from "csv-writer";
-import { getCommentsFromCsv, getSummary } from "../runner-cli/runner_utils";
+import { getCommentsFromCsv, getSummary, getTopicsAndSubtopics } from "../runner-cli/runner_utils";
 import { Summary } from "../src/types";
 import { runQuickChecks } from "./quick_checks_lib";
 import { runMonitoringChecks } from "./monitoring_checks_lib";
@@ -60,6 +60,7 @@ async function main(): Promise<void> {
     .option("-m --runMonitoringChecks <bool>", "Whether to run Monitoring Checks", true);
   program.parse(process.argv);
   const options = program.opts();
+  const project = options.vertexProject;
 
   // This check is needed for unit tests otherwise there's issues with the inputFile being unset.
   if (!options || !options.inputFile) {
@@ -68,13 +69,17 @@ async function main(): Promise<void> {
   }
   const comments = await getCommentsFromCsv(options.inputFile);
 
+  // Use the same discovered topics and subtopics for all summaries to increase consistency and
+  // speed up execution.
+  const topics = await getTopicsAndSubtopics(project, comments);
+
   const summaries: Summary[] = [];
   let failureCount = 0;
   const runTimes = [];
   for (let i = 0; i < options.runCount; i++) {
     const startTime = performance.now();
     try {
-      summaries.push(await getSummary(options.vertexProject, comments));
+      summaries.push(await getSummary(project, comments, topics));
       runTimes.push(performance.now() - startTime);
     } catch (error) {
       console.error("Error summarizing: ", error);
@@ -83,7 +88,7 @@ async function main(): Promise<void> {
   }
 
   if (options.runQuickChecks) {
-    runQuickChecks(options.outputDir, summaries);
+    runQuickChecks(options.outputDir, summaries, topics);
   }
 
   if (options.runMonitoringChecks) {

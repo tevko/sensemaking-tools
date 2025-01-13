@@ -14,7 +14,7 @@
 
 import { Sensemaker } from "../src/sensemaker";
 import { VertexModel } from "../src/models/vertex_model";
-import { Summary, VoteTally, Comment, SummarizationType } from "../src/types";
+import { Summary, VoteTally, Comment, SummarizationType, Topic } from "../src/types";
 import * as path from "path";
 import * as fs from "fs";
 import { parse } from "csv-parse";
@@ -39,11 +39,25 @@ type VoteTallyCsvRow = {
   "group-1-agree-count": number;
 };
 
-export async function getSummary(project: string, comments: Comment[]): Promise<Summary> {
+export async function getTopicsAndSubtopics(
+  project: string,
+  comments: Comment[]
+): Promise<Topic[]> {
   const sensemaker = new Sensemaker({
     defaultModel: new VertexModel(project, "us-central1"),
   });
-  return await sensemaker.summarize(comments, SummarizationType.VOTE_TALLY);
+  return await sensemaker.learnTopics(comments, true);
+}
+
+export async function getSummary(
+  project: string,
+  comments: Comment[],
+  topics?: Topic[]
+): Promise<Summary> {
+  const sensemaker = new Sensemaker({
+    defaultModel: new VertexModel(project, "us-central1"),
+  });
+  return await sensemaker.summarize(comments, SummarizationType.VOTE_TALLY, topics);
 }
 
 export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment[]> {
