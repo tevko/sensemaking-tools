@@ -98,6 +98,7 @@ export type CommentRecord = Static<typeof CommentRecord>;
 export enum SummarizationType {
   BASIC,
   VOTE_TALLY,
+  MULTI_STEP,
 }
 
 /**

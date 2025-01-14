@@ -19,6 +19,10 @@ import { Comment, SummarizationType } from "../types";
 import { getPrompt, retryCall } from "../sensemaker_utils";
 import { SummaryStats, TopicStats } from "../stats_util";
 import { MAX_RETRIES } from "../models/vertex_model";
+import { IntroSummary } from "./summarization_subtasks/intro";
+import { GroupsSummary } from "./summarization_subtasks/groups";
+import { TopicsSummary } from "./summarization_subtasks/topics";
+import { ConclusionSummary } from "./summarization_subtasks/conclusion";
 
 /**
  * Create an intro paragraph formatted in markdown with statistics.
@@ -137,8 +141,40 @@ export async function summarizeByType(
     return await basicSummarize(summaryStats, model, additionalInstructions);
   } else if (summarizationType === SummarizationType.VOTE_TALLY) {
     return await voteTallySummarize(summaryStats, model, additionalInstructions);
+  } else if (summarizationType === SummarizationType.MULTI_STEP) {
+    return await new MultiStepSummary(summaryStats, model, additionalInstructions).getSummary();
   } else {
     throw new TypeError("Unknown Summarization Type.");
+  }
+}
+
+/**
+ *
+ */
+export class MultiStepSummary {
+  private summaryStats: SummaryStats;
+  private model: Model;
+  // TODO: Figure out how we handle additional instructions with this structure.
+  private additionalInstructions?: string;
+
+  constructor(summaryStats: SummaryStats, model: Model, additionalInstructions?: string) {
+    this.summaryStats = summaryStats;
+    this.model = model;
+    this.additionalInstructions = additionalInstructions;
+  }
+
+  async getSummary() {
+    const introSummary = await new IntroSummary(this.summaryStats, this.model).getSummary();
+    const groupsSummary = await new GroupsSummary(this.summaryStats, this.model).getSummary();
+    const topicsSummary = await new TopicsSummary(this.summaryStats, this.model).getSummary();
+    const conclusionSummary = await new ConclusionSummary(
+      this.summaryStats,
+      this.model
+    ).getSummary();
+    // return a concatenation of the separate sections, with two newlines separating each section
+    return (
+      introSummary + "\n\n" + groupsSummary + "\n\n" + topicsSummary + "\n\n" + conclusionSummary
+    );
   }
 }
 
