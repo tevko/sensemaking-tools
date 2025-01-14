@@ -17,7 +17,7 @@
 import { Command } from "commander";
 import * as fs from "fs";
 import { marked } from "marked";
-import { getCommentsFromCsv, getSummary } from "./runner_utils";
+import { getCommentsFromCsv, getSummary, getTopicsFromComments } from "./runner_utils";
 
 async function main(): Promise<void> {
   // Parse command line arguments.
@@ -30,8 +30,9 @@ async function main(): Promise<void> {
   const options = program.opts();
 
   const comments = await getCommentsFromCsv(options.inputFile);
+  const topics = getTopicsFromComments(comments);
 
-  const summary = await getSummary(options.vertexProject, comments);
+  const summary = await getSummary(options.vertexProject, comments, topics);
   const markdownContent = summary.getText("MARKDOWN");
   const htmlContent = `
 <!DOCTYPE html>

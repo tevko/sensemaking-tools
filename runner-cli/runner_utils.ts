@@ -37,6 +37,8 @@ type VoteTallyCsvRow = {
   "group-1-disagree-count": number;
   "group-1-pass-count": number;
   "group-1-agree-count": number;
+  topic: string;
+  subtopic: string;
 };
 
 export async function getTopicsAndSubtopics(
@@ -81,7 +83,7 @@ export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment
         if (row.moderated == -1) {
           return;
         }
-        data.push({
+        const newComment: Comment = {
           text: row.comment_text,
           id: row["comment-id"].toString(),
           voteTalliesByGroup: {
@@ -96,8 +98,46 @@ export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment
               Number(row["group-1-pass-count"])
             ),
           },
-        });
+        };
+        if ("topic" in row && "subtopic" in row) {
+          // TODO: add support for multiple topics and subtopics per comment
+          newComment.topics = [
+            {
+              name: row["topic"].toString(),
+              subtopics: [{ name: row["subtopic"].toString() }],
+            },
+          ];
+        }
+        data.push(newComment);
       })
       .on("end", () => resolve(data));
   });
+}
+
+export function getTopicsFromComments(comments: Comment[]): Topic[] {
+  // Create a map from the topic name to a set of subtopic names.
+  const mapTopicToSubtopicSet: { [topicName: string]: Set<string> } = {};
+  for (const comment of comments) {
+    for (const topic of comment.topics || []) {
+      if (mapTopicToSubtopicSet[topic.name] == undefined) {
+        mapTopicToSubtopicSet[topic.name] = new Set();
+      }
+      if ("subtopics" in topic) {
+        for (const subtopic of topic.subtopics || []) {
+          mapTopicToSubtopicSet[topic.name].add(subtopic.name);
+        }
+      }
+    }
+  }
+
+  // Convert that map to a Topic array and return
+  const returnTopics: Topic[] = [];
+  for (const topicName in mapTopicToSubtopicSet) {
+    const topic: Topic = { name: topicName, subtopics: [] };
+    for (const subtopicName of mapTopicToSubtopicSet[topicName]!.keys()) {
+      topic.subtopics.push({ name: subtopicName });
+    }
+    returnTopics.push(topic);
+  }
+  return returnTopics;
 }
