@@ -39,7 +39,7 @@ export class IntroSummary extends RecursiveSummary {
     }
 
     return Promise.resolve(
-      `# Introduction
+      `## Introduction
 
 ${text}`
     );

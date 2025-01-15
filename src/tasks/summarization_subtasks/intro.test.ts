@@ -49,7 +49,7 @@ describe("IntroTest", () => {
         new SummaryStats(TEST_COMMENTS),
         new VertexModel("project123", "usa")
       ).getSummary()
-    ).toEqual(`# Introduction
+    ).toEqual(`## Introduction
 
 This report summarizes the results of public input, encompassing __4 comments__. All voters were anonymous. The public input collected covered a wide range of topics and subtopics, including:
  * __Topic A (3 comments)__

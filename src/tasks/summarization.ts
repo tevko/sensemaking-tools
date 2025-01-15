@@ -15,8 +15,8 @@
 // Functions for different ways to summarize Comment and Vote data.
 
 import { Model } from "../models/model";
-import { Comment, SummarizationType } from "../types";
-import { getPrompt, retryCall } from "../sensemaker_utils";
+import { SummarizationType } from "../types";
+import { formatCommentsWithVotes, getPrompt, retryCall } from "../sensemaker_utils";
 import { SummaryStats, TopicStats } from "../stats_util";
 import { MAX_RETRIES } from "../models/vertex_model";
 import { IntroSummary } from "./summarization_subtasks/intro";
@@ -196,18 +196,6 @@ export async function basicSummarize(
   );
 
   return retryGenerateSummary(model, prompt);
-}
-
-/**
- * Utility function for formatting the comments together with vote tally data
- * @param commentData: the data to summarize, as an array of Comment objects
- * @returns: comments, together with vote tally information as JSON
- */
-export function formatCommentsWithVotes(commentData: Comment[]): string[] {
-  return commentData.map(
-    (comment: Comment) =>
-      comment.text + "\n      vote info per group: " + JSON.stringify(comment.voteTalliesByGroup)
-  );
 }
 
 /**

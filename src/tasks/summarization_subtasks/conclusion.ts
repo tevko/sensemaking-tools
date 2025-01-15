@@ -19,7 +19,7 @@ import { RecursiveSummary } from "./recursive_summarization";
 export class ConclusionSummary extends RecursiveSummary {
   getSummary() {
     return Promise.resolve(
-      `# Conclusion
+      `## Conclusion
 
 This is a mock conclusion.`
     );

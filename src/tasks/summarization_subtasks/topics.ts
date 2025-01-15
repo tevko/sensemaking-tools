@@ -20,7 +20,7 @@ export class TopicsSummary extends RecursiveSummary {
   getSummary() {
     // return a promise that resolves to a fixed constrant string
     return Promise.resolve(
-      `# Topics
+      `## Topics
 
 This is a mock topic summary.`
     );

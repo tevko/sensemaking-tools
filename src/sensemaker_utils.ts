@@ -72,6 +72,18 @@ ${data.join("\n")}`; // separate comments with newlines
 }
 
 /**
+ * Utility function for formatting the comments together with vote tally data
+ * @param commentData: the data to summarize, as an array of Comment objects
+ * @returns: comments, together with vote tally information as JSON
+ */
+export function formatCommentsWithVotes(commentData: Comment[]): string[] {
+  return commentData.map(
+    (comment: Comment) =>
+      comment.text + "\n      vote info per group: " + JSON.stringify(comment.voteTalliesByGroup)
+  );
+}
+
+/**
  * Converts the given commentRecords to Comments.
  * @param commentRecords what to convert to Comments
  * @param missingTexts the original comments with IDs match the commentRecords

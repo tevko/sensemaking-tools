@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { SummaryStats } from "../stats_util";
-import {
-  formatCommentsWithVotes,
-  getSummarizationInstructions,
-  _quantifyTopicNames,
-  _getIntroText,
-} from "./summarization";
+import { getSummarizationInstructions, _quantifyTopicNames, _getIntroText } from "./summarization";
 
 const TEST_COMMENTS = [
   {
@@ -87,15 +82,6 @@ describe("SummaryTest", () => {
     expect(
       getSummarizationInstructions(false, new SummaryStats(testCommentsWithoutVotes))
     ).not.toContain("55 votes");
-  });
-
-  it("should format comments with vote tallies via formatCommentsWithVotes", () => {
-    expect(formatCommentsWithVotes(TEST_COMMENTS)).toEqual([
-      `comment1
-      vote info per group: {"0":{"agreeCount":10,"disagreeCount":5,"passCount":0,"totalCount":15},"1":{"agreeCount":5,"disagreeCount":10,"passCount":5,"totalCount":20}}`,
-      `comment2
-      vote info per group: {"0":{"agreeCount":2,"disagreeCount":5,"passCount":3,"totalCount":10},"1":{"agreeCount":5,"disagreeCount":3,"passCount":2,"totalCount":10}}`,
-    ]);
   });
 
   it("should quantify topic names", () => {

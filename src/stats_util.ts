@@ -181,6 +181,21 @@ export class SummaryStats {
 
     return topicStats;
   }
+
+  getStatsByGroup(): GroupStats[] {
+    const groupNameToStats: { [key: string]: GroupStats } = {};
+    for (const comment of this.comments) {
+      for (const groupName in comment.voteTalliesByGroup) {
+        const commentVoteCount = comment.voteTalliesByGroup[groupName].totalCount;
+        if (groupName in groupNameToStats) {
+          groupNameToStats[groupName].voteCount += commentVoteCount;
+        } else {
+          groupNameToStats[groupName] = { name: groupName, voteCount: commentVoteCount };
+        }
+      }
+    }
+    return Object.values(groupNameToStats);
+  }
 }
 
 /**
@@ -190,4 +205,12 @@ export interface TopicStats {
   name: string;
   commentCount: number;
   subtopicStats?: TopicStats[];
+}
+
+/**
+ * Represents statistics about a group.
+ */
+export interface GroupStats {
+  name: string;
+  voteCount: number;
 }

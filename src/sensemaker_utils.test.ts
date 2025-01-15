@@ -12,8 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getPrompt, groupCommentsBySubtopic } from "./sensemaker_utils";
+import { getPrompt, groupCommentsBySubtopic, formatCommentsWithVotes } from "./sensemaker_utils";
 import { Comment } from "./types";
+
+const TEST_COMMENTS = [
+  {
+    id: "1",
+    text: "comment1",
+    voteTalliesByGroup: {
+      "0": {
+        agreeCount: 10,
+        disagreeCount: 5,
+        passCount: 0,
+        totalCount: 15,
+      },
+      "1": {
+        agreeCount: 5,
+        disagreeCount: 10,
+        passCount: 5,
+        totalCount: 20,
+      },
+    },
+  },
+  {
+    id: "2",
+    text: "comment2",
+    voteTalliesByGroup: {
+      "0": {
+        agreeCount: 2,
+        disagreeCount: 5,
+        passCount: 3,
+        totalCount: 10,
+      },
+      "1": {
+        agreeCount: 5,
+        disagreeCount: 3,
+        passCount: 2,
+        totalCount: 10,
+      },
+    },
+  },
+];
 
 describe("SensemakerUtilsTest", () => {
   it("should create a prompt", () => {
@@ -99,5 +138,13 @@ comment2`
 
       expect(groupCommentsBySubtopic(categorizedComments)).toEqual({});
     });
+  });
+  it("should format comments with vote tallies via formatCommentsWithVotes", () => {
+    expect(formatCommentsWithVotes(TEST_COMMENTS)).toEqual([
+      `comment1
+      vote info per group: {"0":{"agreeCount":10,"disagreeCount":5,"passCount":0,"totalCount":15},"1":{"agreeCount":5,"disagreeCount":10,"passCount":5,"totalCount":20}}`,
+      `comment2
+      vote info per group: {"0":{"agreeCount":2,"disagreeCount":5,"passCount":3,"totalCount":10},"1":{"agreeCount":5,"disagreeCount":3,"passCount":2,"totalCount":10}}`,
+    ]);
   });
 });
