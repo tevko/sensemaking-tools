@@ -32,14 +32,14 @@ comment2`
       getPrompt(
         "Summarize this.",
         ["comment1", "comment2"],
-        "This is for a town hall style deliberation"
+        "This is for a town hall style conversation"
       )
     ).toEqual(
       `Instructions:
 Summarize this.
 
 Additional context:
-This is for a town hall style deliberation
+This is for a town hall style conversation
 
 Comments:
 comment1

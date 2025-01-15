@@ -32,7 +32,7 @@ export function summaryContainsStats(
   const commentCount = summaryStats.commentCount.toLocaleString();
   if (!summary.includes(`${commentCount} comments`)) {
     console.error(`Summary does not contain the correct number of total comments from the
-        deliberation. commentCount=${commentCount} and summary=${summary}`);
+        conversation. commentCount=${commentCount} and summary=${summary}`);
     return false;
   }
 
@@ -42,7 +42,7 @@ export function summaryContainsStats(
     !summary.includes(`${voteCount} votes`)
   ) {
     console.error(`Summary does not contain the correct number of total votes from the
-        deliberation. voteCount=${voteCount} and summary=${summary}`);
+        conversation. voteCount=${voteCount} and summary=${summary}`);
     return false;
   }
 

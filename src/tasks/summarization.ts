@@ -27,8 +27,8 @@ import { ConclusionSummary } from "./summarization_subtasks/conclusion";
 /**
  * Create an intro paragraph formatted in markdown with statistics.
  *
- * @param commentCount the number of comments in the deliberation
- * @param voteCount the number of votes in the deliberation
+ * @param commentCount the number of comments in the conversation
+ * @param voteCount the number of votes in the conversation
  * @param quantifiedTopics the topics and subtopics with the comment count information and ordered
  * by size
  * @returns a intro paragraph in markdown
@@ -72,7 +72,7 @@ export function getSummarizationInstructions(
     quantifiedTopics
   );
 
-  return `You’re analyzing the results of a public deliberation on a topic. It contains comments and associated votes.
+  return `You’re analyzing the results of a public conversation on a topic. It contains comments and associated votes.
 You will summarize with the summary having all of the following categories and subcategories:
 
 ${JSON.stringify(quantifiedTopics, null, 2)}
@@ -86,13 +86,13 @@ First explain the perspectives of each group, highlighting common ground and poi
 - If there is a group with high number of disagree votes on the claim, do not state that there is strong or widespread support or high consensus. You goal is to avoid misrepresentation of group's opinion based on the group's votes.
 Then, for areas of disagreement, analyze comments to see if there's a solution backed by the comments, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the comments.
 Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the comments.
-The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the deliberation comments.
+The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the conversation comments.
 
 Do not generate:
 - Generic summaries (e.g., "There was discussion about ...")
 - Broad statements lacking specific details (e.g., "In many areas, ..."")
 Do not include group vote tallies in the summary.
-Do not crop the response; include all sections of the deliberation.
+Do not crop the response; include all sections of the conversation.
 
 The summary must follow this format:
 
@@ -114,7 +114,7 @@ ${includeGroups ? "## Description of Groups" : ""}
 
 Please use this text for the Intro section: ${introText}
 
-If group vote data is available, include a one-paragraph section describing the voting groups, using the provided group names. Focus on the groups' expressed views and opinions as reflected in the comments and votes, without speculating about demographics. Avoid politically charged classifications (e.g., "conservative," "liberal", or "progressive"). Instead, describe each group based on their demonstrated preferences within the deliberation (e.g., "Group A favored X, while Group B prioritized Y"). Frame the entire summary around the perspectives of these groups, indicating for each claim whether the groups agree or disagree.
+If group vote data is available, include a one-paragraph section describing the voting groups, using the provided group names. Focus on the groups' expressed views and opinions as reflected in the comments and votes, without speculating about demographics. Avoid politically charged classifications (e.g., "conservative," "liberal", or "progressive"). Instead, describe each group based on their demonstrated preferences within the conversation (e.g., "Group A favored X, while Group B prioritized Y"). Frame the entire summary around the perspectives of these groups, indicating for each claim whether the groups agree or disagree.
 
 Within the high/low consensus summary list out the specific issues and make them bold (by wrapping them in double asterisks "**"), e.g. "**Developing the riverfront**", to make those proposals more clear and help spot the relative priority or consensus of specific issues more easily at a glance.
 `;

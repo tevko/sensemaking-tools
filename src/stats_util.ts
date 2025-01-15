@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Utils to get statistical information from a deliberation
+// Utils to get statistical information from a conversation
 
 import { Comment, CommentWithVoteTallies, isCommentWithVoteTalliesType, VoteTally } from "./types";
 import { groupCommentsBySubtopic } from "./sensemaker_utils";
@@ -94,14 +94,14 @@ export class SummaryStats {
     return count;
   }
 
-  // The total number of votes in all comments in a deliberation.
+  // The total number of votes in all comments in a conversation.
   get voteCount(): number {
     return this.comments.reduce((sum: number, comment: Comment) => {
       return sum + this.getCommentVoteCount(comment);
     }, 0);
   }
 
-  // The total number of comments in a deliberation.
+  // The total number of comments in a conversation.
   get commentCount(): number {
     return this.comments.length;
   }

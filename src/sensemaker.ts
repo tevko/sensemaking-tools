@@ -34,9 +34,9 @@ import { groundSummary } from "./validation/grounding";
 import { SummaryStats } from "./stats_util";
 import { summaryContainsStats } from "./validation/stats_checker";
 
-// Class to make sense of a deliberation. Uses LLMs to learn what topics were discussed and
+// Class to make sense of conversation data. Uses LLMs to learn what topics were discussed and
 // categorize comments. Then these categorized comments can be used with optional Vote data to
-// summarize a deliberation.
+// summarize a conversation.
 export class Sensemaker {
   private modelSettings: ModelSettings;
 
@@ -60,7 +60,7 @@ export class Sensemaker {
   }
 
   /**
-   * Generates a summary of public deliberation comments, optionally incorporating vote data.
+   * Generates a conversation summary, optionally incorporating vote data.
    *
    * It offers flexibility in how topics for the summary are determined:
    * 1. Categorized Comments: If the input `comments` are already categorized (i.e., they have a
@@ -77,7 +77,7 @@ export class Sensemaker {
    * summarization process. The generated summary is then grounded in the original comments to
    * ensure accuracy and relevance.
    *
-   * @param comments An array of `Comment` objects representing the public deliberation comments. If
+   * @param comments An array of `Comment` objects representing the public conversation comments. If
    *  these comments are already categorized (have a `topics` property), the summarization will be
    *  based on those existing categories.
    * @param summarizationType  The type of summarization to perform (e.g.,
