@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import { getPrompt, formatCommentsWithVotes } from "../../sensemaker_utils";
+import { getGroupAgreeDifference } from "../../stats_util";
 import { RecursiveSummary } from "./recursive_summarization";
+import { Comment } from "../../types";
 
 /**
  * Format a list of strings to be a human readable list ending with "and"
@@ -42,6 +44,37 @@ function formatStringList(items: string[]): string {
  * them.
  */
 export class GroupsSummary extends RecursiveSummary {
+  // The number of top comments to consider per section when summarizing.
+  private topK = 12;
+
+  /**
+   * Describes what makes the groups similar and different.
+   * @returns a two sentence description of similarities and differences.
+   */
+  private async getGroupComparison(): Promise<string> {
+    const groupComparisonSimilar = this.model.generateText(
+      getPrompt(
+        "Write one sentence describing what makes the voting groups similar based on their demonstrated preferences within the conversation.",
+        // TODO: Take top K cross group agreement comments
+        formatCommentsWithVotes(this.input.comments)
+      )
+    );
+
+    const groupComparisonDifferent = this.model.generateText(
+      getPrompt(
+        "Write one sentence describing what makes the voting groups different based on their demonstrated preferences within the conversation.",
+        // TODO: Take top K cross group disagreement comments
+        formatCommentsWithVotes(this.input.comments)
+      )
+    );
+
+    return Promise.all([groupComparisonSimilar, groupComparisonDifferent]).then(
+      (results: string[]) => {
+        return results.join(" ");
+      }
+    );
+  }
+
   /**
    * Returns a short description of all groups and a comparison of them.
    * @param groupNames the names of the groups to describe and compare
@@ -50,6 +83,11 @@ export class GroupsSummary extends RecursiveSummary {
   private async getGroupDescriptions(groupNames: string[]): Promise<string> {
     const groupDescriptions = [];
     for (const groupName of groupNames) {
+      const topAgreeCommentsForGroup = this.input
+        .topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK)
+        .map((comment: Comment) => {
+          return comment.text;
+        });
       groupDescriptions.push(
         this.model
           .generateText(
@@ -58,9 +96,8 @@ export class GroupsSummary extends RecursiveSummary {
                 ` views and opinions as reflected in the comments and votes, without speculating ` +
                 `about demographics. Avoid politically charged language (e.g., "conservative," ` +
                 `"liberal", or "progressive"). Instead, describe the group based on their ` +
-                `demonstrated preferences within the deliberation.`,
-              // TODO: filter the comments given to the LLM and remove vote information.
-              formatCommentsWithVotes(this.input.comments)
+                `demonstrated preferences within the conversation.`,
+              topAgreeCommentsForGroup
             )
           )
           .then((result: string) => {
@@ -69,18 +106,15 @@ export class GroupsSummary extends RecursiveSummary {
       );
     }
 
-    const groupComparison = this.model.generateText(
-      getPrompt(
-        "Write one sentence describing what makes the voting groups similar and different based on their demonstrated preferences within the deliberation.",
-        formatCommentsWithVotes(this.input.comments)
-      )
-    );
-
+    // TODO: These texts should have citations added. The comments used to generate them should be
+    // used.
     // Join the individual group descriptions whenever they finish, and when that's done wait for
     // the group comparison to be created and combine them all together.
-    return Promise.all([...groupDescriptions, groupComparison]).then((results: string[]) => {
-      return results.join("\n");
-    });
+    return Promise.all([...groupDescriptions, this.getGroupComparison()]).then(
+      (results: string[]) => {
+        return results.join("\n");
+      }
+    );
   }
 
   async getSummary() {
