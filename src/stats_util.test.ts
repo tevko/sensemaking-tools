@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { SummaryStats } from "./stats_util";
+import {
+  SummaryStats,
+  getAgreeProbability,
+  getGroupInformedConsensus,
+  getGroupAgreeDifference,
+  getMinAgreeProb,
+} from "./stats_util";
 import { Comment } from "./types";
 
 const TEST_COMMENTS = [
@@ -53,6 +59,98 @@ const TEST_COMMENTS = [
     },
   },
 ];
+
+describe("stats utility functions", () => {
+  it("should get the agree probability for a given vote tally", () => {
+    expect(
+      getAgreeProbability({ agreeCount: 10, disagreeCount: 5, passCount: 5, totalCount: 20 })
+    ).toBeCloseTo((10 + 1) / (20 + 2));
+  });
+
+  it("should handle vote tallies with zero counts", () => {
+    expect(getAgreeProbability({ agreeCount: 0, disagreeCount: 0, totalCount: 0 })).toBeCloseTo(
+      0.5
+    );
+    expect(getAgreeProbability({ agreeCount: 0, disagreeCount: 5, totalCount: 5 })).toBeCloseTo(
+      1 / 7
+    );
+    expect(getAgreeProbability({ agreeCount: 5, disagreeCount: 0, totalCount: 5 })).toBeCloseTo(
+      6 / 7
+    );
+  });
+
+  it("should get the group informed consensus for a given comment", () => {
+    expect(
+      getGroupInformedConsensus({
+        id: "1",
+        text: "comment1",
+        voteTalliesByGroup: {
+          "0": {
+            agreeCount: 10,
+            disagreeCount: 5,
+            passCount: 0,
+            totalCount: 15,
+          },
+          "1": {
+            agreeCount: 5,
+            disagreeCount: 10,
+            passCount: 5,
+            totalCount: 20,
+          },
+        },
+      })
+    ).toBeCloseTo(((11 / 17) * 6) / 22);
+  });
+
+  it("should get the minimum agree probability across groups for a given comment", () => {
+    expect(
+      getMinAgreeProb({
+        id: "1",
+        text: "comment1",
+        voteTalliesByGroup: {
+          "0": {
+            agreeCount: 10,
+            disagreeCount: 5,
+            passCount: 0,
+            totalCount: 15,
+          },
+          "1": {
+            agreeCount: 5,
+            disagreeCount: 10,
+            passCount: 5,
+            totalCount: 20,
+          },
+        },
+      })
+    ).toBeCloseTo(3 / 11);
+  });
+
+  it("should get the group agree difference for a given comment and group", () => {
+    expect(
+      getGroupAgreeDifference(
+        {
+          id: "1",
+          text: "comment1",
+          voteTalliesByGroup: {
+            "0": {
+              agreeCount: 1,
+              disagreeCount: 2,
+              passCount: 0,
+              totalCount: 3,
+            },
+            "1": {
+              agreeCount: 3,
+              disagreeCount: 1,
+              passCount: 0,
+              totalCount: 4,
+            },
+          },
+        },
+        "0"
+      )
+    ).toBeCloseTo(2 / 5 - 2 / 3);
+  });
+});
 
 describe("StatsUtilTest", () => {
   it("should get the total number of votes from multiple comments", () => {
@@ -188,5 +286,19 @@ describe("StatsUtilTest", () => {
       },
     ];
     expect(new SummaryStats(comments).getStatsByTopic()).toEqual(expectedSortedTopics);
+  });
+
+  it("should get the representative comments for a given group", () => {
+    const representativeComments = new SummaryStats(TEST_COMMENTS).getRepresentativeComments("0");
+    expect(representativeComments.length).toEqual(2);
+    expect(representativeComments[0].id).toEqual("1");
+  });
+
+  it("should return empty array if there are no comments with vote tallies", () => {
+    const commentsWithoutVotes: Comment[] = [
+      { id: "1", text: "comment1" },
+      { id: "2", text: "comment2" },
+    ];
+    expect(new SummaryStats(commentsWithoutVotes).getRepresentativeComments("0")).toEqual([]);
   });
 });

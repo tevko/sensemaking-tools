@@ -247,6 +247,26 @@ export interface Comment {
   topics?: Topic[];
 }
 
+export interface CommentWithVoteTallies extends Comment {
+  voteTalliesByGroup: { [key: string]: VoteTally };
+}
+
+/**
+ * Checks if the given data is a CommentWithVoteTallies object (that is, a Comment object that includes VoteTallies), and sets the type as such if it passes.
+ * @param data the object to check
+ * @returns true if the object is a CommentWithVoteTallies, and false otherwise.
+ */
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
+export function isCommentWithVoteTalliesType(data: any): data is CommentWithVoteTallies {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "voteTalliesByGroup" in data &&
+    isVoteTallyByGroup(data.voteTalliesByGroup) &&
+    isCommentType(data)
+  );
+}
+
 /**
  * Checks if the given object is a dictionary of group names to VoteTally objects.
  * @param data the object to check
