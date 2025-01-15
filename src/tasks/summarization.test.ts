@@ -15,7 +15,6 @@ import { SummaryStats } from "../stats_util";
 import {
   formatCommentsWithVotes,
   getSummarizationInstructions,
-  _sortTopicsByComments,
   _quantifyTopicNames,
   _getIntroText,
 } from "./summarization";
@@ -97,63 +96,6 @@ describe("SummaryTest", () => {
       `comment2
       vote info per group: {"0":{"agreeCount":2,"disagreeCount":5,"passCount":3,"totalCount":10},"1":{"agreeCount":5,"disagreeCount":3,"passCount":2,"totalCount":10}}`,
     ]);
-  });
-
-  it("should sort topics by comment count and put 'Other' topics and subtopics last", () => {
-    const topicStats = [
-      {
-        name: "Topic A",
-        commentCount: 3,
-        subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 1 },
-        ],
-      },
-      {
-        name: "Other",
-        commentCount: 5,
-        subtopicStats: [
-          { name: "Subtopic Other.1", commentCount: 2 },
-          { name: "Other", commentCount: 3 },
-        ],
-      },
-      {
-        name: "Topic B",
-        commentCount: 6,
-        subtopicStats: [
-          { name: "Subtopic B.1", commentCount: 4 },
-          { name: "Subtopic B.2", commentCount: 2 },
-        ],
-      },
-    ];
-
-    const expectedSortedTopics = [
-      {
-        name: "Topic B",
-        commentCount: 6,
-        subtopicStats: [
-          { name: "Subtopic B.1", commentCount: 4 },
-          { name: "Subtopic B.2", commentCount: 2 },
-        ],
-      },
-      {
-        name: "Topic A",
-        commentCount: 3,
-        subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 1 },
-        ],
-      },
-      {
-        name: "Other",
-        commentCount: 5,
-        subtopicStats: [
-          { name: "Subtopic Other.1", commentCount: 2 },
-          { name: "Other", commentCount: 3 },
-        ],
-      },
-    ];
-    expect(_sortTopicsByComments(topicStats)).toEqual(expectedSortedTopics);
   });
 
   it("should quantify topic names", () => {

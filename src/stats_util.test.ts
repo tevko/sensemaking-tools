@@ -96,4 +96,97 @@ describe("StatsUtilTest", () => {
     ];
     expect(new SummaryStats(comments).getStatsByTopic()).toEqual(expectedTopicStats);
   });
+
+  it("should sort topics by comment count and put 'Other' topics and subtopics last", () => {
+    const comments: Comment[] = [
+      {
+        id: "1",
+        text: "comment 1",
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
+      },
+      {
+        id: "2",
+        text: "comment 2",
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
+      },
+      {
+        id: "3",
+        text: "comment 3",
+        topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2" }] }],
+      },
+
+      {
+        id: "4",
+        text: "comment 4",
+        topics: [{ name: "Other", subtopics: [{ name: "Subtopic Other.1" }] }],
+      },
+      {
+        id: "5",
+        text: "comment 5",
+        topics: [{ name: "Other", subtopics: [{ name: "Subtopic Other.1" }] }],
+      },
+      { id: "6", text: "comment 6", topics: [{ name: "Other", subtopics: [{ name: "Other" }] }] },
+      { id: "7", text: "comment 7", topics: [{ name: "Other", subtopics: [{ name: "Other" }] }] },
+      { id: "8", text: "comment 8", topics: [{ name: "Other", subtopics: [{ name: "Other" }] }] },
+
+      {
+        id: "9",
+        text: "comment 9",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] }],
+      },
+      {
+        id: "10",
+        text: "comment 10",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] }],
+      },
+      {
+        id: "11",
+        text: "comment 11",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] }],
+      },
+      {
+        id: "12",
+        text: "comment 12",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] }],
+      },
+      {
+        id: "13",
+        text: "comment 13",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.2" }] }],
+      },
+      {
+        id: "14",
+        text: "comment 14",
+        topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.2" }] }],
+      },
+    ];
+
+    const expectedSortedTopics = [
+      {
+        name: "Topic B",
+        commentCount: 6,
+        subtopicStats: [
+          { name: "Subtopic B.1", commentCount: 4 },
+          { name: "Subtopic B.2", commentCount: 2 },
+        ],
+      },
+      {
+        name: "Topic A",
+        commentCount: 3,
+        subtopicStats: [
+          { name: "Subtopic A.1", commentCount: 2 },
+          { name: "Subtopic A.2", commentCount: 1 },
+        ],
+      },
+      {
+        name: "Other",
+        commentCount: 5,
+        subtopicStats: [
+          { name: "Subtopic Other.1", commentCount: 2 },
+          { name: "Other", commentCount: 3 },
+        ],
+      },
+    ];
+    expect(new SummaryStats(comments).getStatsByTopic()).toEqual(expectedSortedTopics);
+  });
 });

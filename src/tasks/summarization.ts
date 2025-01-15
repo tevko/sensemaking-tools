@@ -64,8 +64,7 @@ export function getSummarizationInstructions(
   // Prepare statistics like vote count and number of comments per topic for injecting in prompt as
   // well as sorts topics based on count.
   const topicStats = summaryStats.getStatsByTopic();
-  const sortedTopics = _sortTopicsByComments(topicStats);
-  const quantifiedTopics = _quantifyTopicNames(sortedTopics);
+  const quantifiedTopics = _quantifyTopicNames(topicStats);
 
   const introText = _getIntroText(
     summaryStats.commentCount,
@@ -257,32 +256,6 @@ export async function retryGenerateSummary(model: Model, prompt: string): Promis
     [model, prompt], // arguments for the LLM call
     [] // no additional arguments for the validation - the summary is passed automatically
   );
-}
-
-/**
- * Sorts topics and their subtopics based on comment count in descending order, with "Other" topics and subtopics going last.
- *
- * @param topics An array of `TopicStats` objects to be sorted.
- * @returns A new array of `TopicStats` objects, sorted by comment count.
- */
-export function _sortTopicsByComments(topics: TopicStats[]): TopicStats[] {
-  topics.sort((a, b) => {
-    if (a.name === "Other") return 1;
-    if (b.name === "Other") return -1;
-    return b.commentCount - a.commentCount;
-  });
-
-  topics.forEach((topic) => {
-    if (topic.subtopicStats) {
-      topic.subtopicStats.sort((a, b) => {
-        if (a.name === "Other") return 1;
-        if (b.name === "Other") return -1;
-        return b.commentCount - a.commentCount;
-      });
-    }
-  });
-
-  return topics;
 }
 
 /**

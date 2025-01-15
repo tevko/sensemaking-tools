@@ -1,4 +1,4 @@
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,34 @@
 
 // Functions for different ways to summarize Comment and Vote data.
 
+import { TopicStats } from "../../stats_util";
 import { RecursiveSummary } from "./recursive_summarization";
 
 export class IntroSummary extends RecursiveSummary {
   getSummary() {
-    // return a promise that resolves to a fixed constrant string
+    const commentCountFormatted = this.input.commentCount.toLocaleString();
+    const voteCountFormatted = this.input.voteCount.toLocaleString();
+    let text =
+      `This report summarizes the results of public input, encompassing ` +
+      `__${commentCountFormatted} comments__` +
+      `${this.input.voteCount > 0 ? ` and __${voteCountFormatted} votes__` : ""}. All voters were anonymous. The ` +
+      `public input collected covered a wide range of topics and subtopics, including:\n`;
+
+    for (const topicStats of this.input.getStatsByTopic()) {
+      text += ` * __${topicStats.name} (${topicStats.commentCount} comments)__\n`;
+      if (!topicStats.subtopicStats) {
+        continue;
+      }
+      const subtopics = topicStats.subtopicStats.map((subtopic: TopicStats) => {
+        return `${subtopic.name} (${subtopic.commentCount})`;
+      });
+      text += "     * " + subtopics.join(", ") + "\n";
+    }
+
     return Promise.resolve(
       `# Introduction
 
-This is a mock introduction.`
+${text}`
     );
   }
 }

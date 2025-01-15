@@ -48,12 +48,13 @@ export class SummaryStats {
   }
 
   /**
-   * Counts the number of comments associated with each topic and subtopic.
+   * Sorts topics and their subtopics based on comment count in descending order, with
+   * "Other" topics and subtopics going last.
    *
    * @param commentsByTopic A nested map where keys are topic names, values are maps
    *                        where keys are subtopic names, and values are maps where
    *                        keys are comment IDs and values are comment texts.
-   * @returns An array of `TopicStats` objects.
+   * @returns A list of TopicStats objects sorted by comment count with "Other" topics last.
    */
   getStatsByTopic(): TopicStats[] {
     const commentsByTopic = groupCommentsBySubtopic(this.comments);
@@ -76,6 +77,22 @@ export class SummaryStats {
         subtopicStats: subtopicStats,
       });
     }
+
+    topicStats.sort((a, b) => {
+      if (a.name === "Other") return 1;
+      if (b.name === "Other") return -1;
+      return b.commentCount - a.commentCount;
+    });
+
+    topicStats.forEach((topic) => {
+      if (topic.subtopicStats) {
+        topic.subtopicStats.sort((a, b) => {
+          if (a.name === "Other") return 1;
+          if (b.name === "Other") return -1;
+          return b.commentCount - a.commentCount;
+        });
+      }
+    });
 
     return topicStats;
   }

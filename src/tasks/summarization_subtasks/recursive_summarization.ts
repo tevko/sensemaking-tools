@@ -18,8 +18,8 @@ import { Model } from "../../models/model";
 import { SummaryStats } from "../../stats_util";
 
 export abstract class RecursiveSummary {
-  private input: SummaryStats;
-  private model: Model;
+  protected input: SummaryStats;
+  protected model: Model;
 
   constructor(input: SummaryStats, model: Model) {
     this.input = input;
