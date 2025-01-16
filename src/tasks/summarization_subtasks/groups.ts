@@ -12,10 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getPrompt, formatCommentsWithVotes } from "../../sensemaker_utils";
-import { getGroupAgreeDifference } from "../../stats_util";
+import { getPrompt } from "../../sensemaker_utils";
+import {
+  getGroupAgreeDifference,
+  getGroupInformedConsensus,
+  getMinAgreeProb,
+  SummaryStats,
+} from "../../stats_util";
 import { RecursiveSummary } from "./recursive_summarization";
-import { Comment } from "../../types";
+import { Comment, CommentWithVoteTallies, isCommentWithVoteTalliesType } from "../../types";
 
 /**
  * Format a list of strings to be a human readable list ending with "and"
@@ -45,26 +50,96 @@ function formatStringList(items: string[]): string {
  */
 export class GroupsSummary extends RecursiveSummary {
   // The number of top comments to consider per section when summarizing.
-  private topK = 12;
+  private topK = 5;
+  // The minimum agree probability across groups to be considered a consensus statement.
+  private minConsensusAgreeProb = 0.6;
+  // The minimum agreement probability difference.
+  private minAgreeProbDifference = 0.3;
+
+  /**
+   * Gets the topK agreed upon comments for a group.
+   * @param groupName the group to consider agreement for
+   * @returns the top comments as a list of strings
+   */
+  private getTopAgreeCommentsForGroup = (groupName: string) =>
+    this.input
+      .topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK)
+      .map((comment: Comment) => {
+        return comment.text;
+      });
+
+  /**
+   * Gets the topK agreed upon comments across all groups.
+   *
+   * This captures when the groups acted similarly, so it includes both when all the groups
+   * agreed with something and when all the groups disagreed with something.
+   * @returns the top agreed on comments
+   */
+  private getTopAgreeCommentsAcrossGroups(): Comment[] {
+    const filteredComments = this.input.comments
+      .filter(isCommentWithVoteTalliesType)
+      .filter((comment: CommentWithVoteTallies) => {
+        // Before using Group Informed Consensus a minimum bar of agreement must be enforced. The
+        // absolute value is used to get when all groups agree with a comment OR all groups agree
+        // that they don't agree with a comment.
+        return Math.abs(getMinAgreeProb(comment)) >= this.minConsensusAgreeProb;
+      });
+    const filteredSummaryStats = new SummaryStats(filteredComments);
+    return filteredSummaryStats.topK((comment) => getGroupInformedConsensus(comment), this.topK);
+  }
+
+  /**
+   * Returns the top K comments that best distinguish differences of opinion between groups.
+   *
+   * This is computed as the difference in how likely each group is to agree with a given comment
+   * as compared with the rest of the participant body.
+   *
+   * @returns the top disagreed on comments
+   */
+  private getTopDisagreeCommentsAcrossGroups(groupNames: string[]): Comment[] {
+    const filteredComments = this.input.comments
+      .filter(isCommentWithVoteTalliesType)
+      .filter((comment: CommentWithVoteTallies) => {
+        // Each the groups must disagree with the rest of the groups above an absolute
+        // threshold before we consider taking the topK.
+        for (const groupName of groupNames) {
+          if (Math.abs(getGroupAgreeDifference(comment, groupName)) < this.minAgreeProbDifference) {
+            return false;
+          }
+        }
+        return true;
+      });
+    const filteredSummaryStats = new SummaryStats(filteredComments);
+    return filteredSummaryStats.topK(
+      // Get the maximum absolute group agree difference for any group.
+      (comment) =>
+        Math.max(
+          ...groupNames.map((name: string) => {
+            return Math.abs(getGroupAgreeDifference(comment, name));
+          })
+        ),
+      this.topK
+    );
+  }
 
   /**
    * Describes what makes the groups similar and different.
    * @returns a two sentence description of similarities and differences.
    */
-  private async getGroupComparison(): Promise<string> {
+  private async getGroupComparison(groupNames: string[]): Promise<string> {
     const groupComparisonSimilar = this.model.generateText(
       getPrompt(
-        "Write one sentence describing what makes the voting groups similar based on their demonstrated preferences within the conversation.",
-        // TODO: Take top K cross group agreement comments
-        formatCommentsWithVotes(this.input.comments)
+        "Write one sentence describing what makes the different groups that had high inter group " +
+          "agreement on this subset of comments. Frame it in terms of what the groups largely agree on.",
+        this.getTopAgreeCommentsAcrossGroups().map((comment: Comment) => comment.text)
       )
     );
 
     const groupComparisonDifferent = this.model.generateText(
       getPrompt(
-        "Write one sentence describing what makes the voting groups different based on their demonstrated preferences within the conversation.",
-        // TODO: Take top K cross group disagreement comments
-        formatCommentsWithVotes(this.input.comments)
+        "The following are comments that different groups had different opinions on. Write one sentence describing " +
+          "what groups had different opinions on. Frame it in terms of what differs between the groups.",
+        this.getTopDisagreeCommentsAcrossGroups(groupNames).map((comment: Comment) => comment.text)
       )
     );
 
@@ -83,11 +158,6 @@ export class GroupsSummary extends RecursiveSummary {
   private async getGroupDescriptions(groupNames: string[]): Promise<string> {
     const groupDescriptions = [];
     for (const groupName of groupNames) {
-      const topAgreeCommentsForGroup = this.input
-        .topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK)
-        .map((comment: Comment) => {
-          return comment.text;
-        });
       groupDescriptions.push(
         this.model
           .generateText(
@@ -97,7 +167,7 @@ export class GroupsSummary extends RecursiveSummary {
                 `about demographics. Avoid politically charged language (e.g., "conservative," ` +
                 `"liberal", or "progressive"). Instead, describe the group based on their ` +
                 `demonstrated preferences within the conversation.`,
-              topAgreeCommentsForGroup
+              this.getTopAgreeCommentsForGroup(groupName)
             )
           )
           .then((result: string) => {
@@ -110,7 +180,7 @@ export class GroupsSummary extends RecursiveSummary {
     // used.
     // Join the individual group descriptions whenever they finish, and when that's done wait for
     // the group comparison to be created and combine them all together.
-    return Promise.all([...groupDescriptions, this.getGroupComparison()]).then(
+    return Promise.all([...groupDescriptions, this.getGroupComparison(groupNames)]).then(
       (results: string[]) => {
         return results.join("\n");
       }
