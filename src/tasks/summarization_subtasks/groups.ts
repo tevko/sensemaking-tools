@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { getPrompt } from "../../sensemaker_utils";
+import { commentCitation } from "../../validation/grounding";
 import {
   getGroupAgreeDifference,
   getGroupInformedConsensus,
@@ -61,12 +62,8 @@ export class GroupsSummary extends RecursiveSummary {
    * @param groupName the group to consider agreement for
    * @returns the top comments as a list of strings
    */
-  private getTopAgreeCommentsForGroup = (groupName: string) =>
-    this.input
-      .topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK)
-      .map((comment: Comment) => {
-        return comment.text;
-      });
+  private getTopAgreeCommentsForGroup = (groupName: string): Comment[] =>
+    this.filteredInput.topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK);
 
   /**
    * Gets the topK agreed upon comments across all groups.
@@ -76,7 +73,7 @@ export class GroupsSummary extends RecursiveSummary {
    * @returns the top agreed on comments
    */
   private getTopAgreeCommentsAcrossGroups(): Comment[] {
-    const filteredComments = this.input.comments
+    const filteredComments = this.filteredInput.comments
       .filter(isCommentWithVoteTalliesType)
       .filter((comment: CommentWithVoteTallies) => {
         // Before using Group Informed Consensus a minimum bar of agreement must be enforced. The
@@ -97,7 +94,7 @@ export class GroupsSummary extends RecursiveSummary {
    * @returns the top disagreed on comments
    */
   private getTopDisagreeCommentsAcrossGroups(groupNames: string[]): Comment[] {
-    const filteredComments = this.input.comments
+    const filteredComments = this.filteredInput.comments
       .filter(isCommentWithVoteTalliesType)
       .filter((comment: CommentWithVoteTallies) => {
         // Each the groups must disagree with the rest of the groups above an absolute
@@ -127,27 +124,47 @@ export class GroupsSummary extends RecursiveSummary {
    * @returns a two sentence description of similarities and differences.
    */
   private async getGroupComparison(groupNames: string[]): Promise<string> {
+    const topAgreeCommentsAcrossGroups = this.getTopAgreeCommentsAcrossGroups();
     const groupComparisonSimilar = this.model.generateText(
       getPrompt(
         "Write one sentence describing what makes the different groups that had high inter group " +
           "agreement on this subset of comments. Frame it in terms of what the groups largely agree on.",
-        this.getTopAgreeCommentsAcrossGroups().map((comment: Comment) => comment.text)
+        topAgreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
       )
     );
 
+    const topDisagreeCommentsAcrossGroups = this.getTopDisagreeCommentsAcrossGroups(groupNames);
     const groupComparisonDifferent = this.model.generateText(
       getPrompt(
         "The following are comments that different groups had different opinions on. Write one sentence describing " +
           "what groups had different opinions on. Frame it in terms of what differs between the groups.",
-        this.getTopDisagreeCommentsAcrossGroups(groupNames).map((comment: Comment) => comment.text)
+        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
       )
     );
 
-    return Promise.all([groupComparisonSimilar, groupComparisonDifferent]).then(
-      (results: string[]) => {
-        return results.join(" ");
-      }
-    );
+    // Combine the descriptions and add the comments used for summarization as citations.
+    return Promise.resolve(groupComparisonSimilar)
+      .then((result: string) => {
+        return result + this.getCommentCitations(topAgreeCommentsAcrossGroups);
+      })
+      .then(async (similarResult: string) => {
+        const differentResult = await Promise.resolve(groupComparisonDifferent);
+        return (
+          similarResult +
+          " " +
+          differentResult +
+          this.getCommentCitations(topDisagreeCommentsAcrossGroups)
+        );
+      });
+  }
+
+  /**
+   * Create citations for comments in the format of "[12, 43, 56]"
+   * @param comments the comments to use for citations
+   * @returns the formatted citations
+   */
+  private getCommentCitations(comments: Comment[]): string {
+    return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
   }
 
   /**
@@ -158,6 +175,7 @@ export class GroupsSummary extends RecursiveSummary {
   private async getGroupDescriptions(groupNames: string[]): Promise<string> {
     const groupDescriptions = [];
     for (const groupName of groupNames) {
+      const topCommentsForGroup = this.getTopAgreeCommentsForGroup(groupName);
       groupDescriptions.push(
         this.model
           .generateText(
@@ -167,11 +185,13 @@ export class GroupsSummary extends RecursiveSummary {
                 `about demographics. Avoid politically charged language (e.g., "conservative," ` +
                 `"liberal", or "progressive"). Instead, describe the group based on their ` +
                 `demonstrated preferences within the conversation.`,
-              this.getTopAgreeCommentsForGroup(groupName)
+              topCommentsForGroup.map((comment: Comment) => comment.text)
             )
           )
           .then((result: string) => {
-            return `__${groupName}__: ` + result;
+            return (
+              `__${groupName}__: ` + result + this.getCommentCitations(topCommentsForGroup) + "\n"
+            );
           })
       );
     }
@@ -188,7 +208,7 @@ export class GroupsSummary extends RecursiveSummary {
   }
 
   async getSummary() {
-    const groupStats = this.input.getStatsByGroup();
+    const groupStats = this.filteredInput.getStatsByGroup();
     const groupCount = groupStats.length;
     const groupNamesWithQuotes = groupStats.map((stat) => {
       return `"${stat.name}"`;

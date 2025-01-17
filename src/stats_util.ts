@@ -76,6 +76,17 @@ export function getGroupAgreeDifference(comment: CommentWithVoteTallies, group: 
   return groupAgreeProb - otherGroupsAgreeProb;
 }
 
+export function getCommentVoteCount(comment: Comment): number {
+  let count = 0;
+  for (const groupName in comment.voteTalliesByGroup) {
+    const groupCount = comment.voteTalliesByGroup[groupName].totalCount;
+    if (groupCount > 0) {
+      count += groupCount;
+    }
+  }
+  return count;
+}
+
 // Statistics to include in the summary.
 export class SummaryStats {
   comments: Comment[];
@@ -83,21 +94,10 @@ export class SummaryStats {
     this.comments = comments;
   }
 
-  private getCommentVoteCount(comment: Comment): number {
-    let count = 0;
-    for (const groupName in comment.voteTalliesByGroup) {
-      const groupCount = comment.voteTalliesByGroup[groupName].totalCount;
-      if (groupCount > 0) {
-        count += groupCount;
-      }
-    }
-    return count;
-  }
-
   // The total number of votes in all comments in a conversation.
   get voteCount(): number {
     return this.comments.reduce((sum: number, comment: Comment) => {
-      return sum + this.getCommentVoteCount(comment);
+      return sum + getCommentVoteCount(comment);
     }, 0);
   }
 
