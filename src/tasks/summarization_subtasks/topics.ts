@@ -14,7 +14,7 @@
 
 // Functions for different ways to summarize Comment and Vote data.
 
-import { RecursiveSummary } from "./recursive_summarization";
+import { RecursiveSummary, resolvePromisesInBatches } from "./recursive_summarization";
 import { TopicStats } from "../../stats_util";
 
 export class TopicsSummary extends RecursiveSummary {
@@ -35,8 +35,8 @@ export class TopicsSummary extends RecursiveSummary {
     const topicSummaries: Array<Promise<string>> = topicStats.map((topicStat) =>
       this.getTopicSummary(topicStat)
     );
-    const topicSummaryText: string = await Promise.all(topicSummaries).then((summaries) =>
-      summaries.join("\n")
+    const topicSummaryText: string = await resolvePromisesInBatches(topicSummaries).then(
+      (summaries) => summaries.join("\n")
     );
 
     return Promise.resolve(
@@ -61,7 +61,9 @@ ${topicSummaryText}
     const nSubtopics: number = topicStat.subtopicStats?.length || 0;
     const subtopicsSummaryText: string =
       subtopicSummaries.length > 0
-        ? await Promise.all(subtopicSummaries).then((summaries) => summaries.join("\n"))
+        ? await resolvePromisesInBatches(subtopicSummaries).then((summaries) =>
+            summaries.join("\n")
+          )
         : "";
     // This is just a stub for now, and may eventually be added on to include more naunced descriptions of e.g. where the highest
     // points of common ground and most significant differences of opinion were across the subtopics.

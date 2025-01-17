@@ -20,7 +20,7 @@ import {
   getMinAgreeProb,
   SummaryStats,
 } from "../../stats_util";
-import { RecursiveSummary } from "./recursive_summarization";
+import { RecursiveSummary, resolvePromisesInBatches } from "./recursive_summarization";
 import { Comment, CommentWithVoteTallies, isCommentWithVoteTalliesType } from "../../types";
 
 /**
@@ -200,11 +200,12 @@ export class GroupsSummary extends RecursiveSummary {
     // used.
     // Join the individual group descriptions whenever they finish, and when that's done wait for
     // the group comparison to be created and combine them all together.
-    return Promise.all([...groupDescriptions, this.getGroupComparison(groupNames)]).then(
-      (results: string[]) => {
-        return results.join("\n");
-      }
-    );
+    return resolvePromisesInBatches([
+      ...groupDescriptions,
+      this.getGroupComparison(groupNames),
+    ]).then((results: string[]) => {
+      return results.join("\n");
+    });
   }
 
   async getSummary() {

@@ -37,3 +37,27 @@ export abstract class RecursiveSummary {
 
   abstract getSummary(): Promise<string>;
 }
+
+/**
+ * Resolves Promises sequentially, optionally using batching for limited parallelization.
+ *
+ * Batching can be used to execute mutiple promises in parallel that will then be resolved in
+ * order. The batchSize can be though of as the maximum number of parallel threads.
+ * @param promises the promises to resolve.
+ * @param batchSize how many promises to resolve at once, the default is 1 so no parallelization.
+ * @returns A list of the resolved values of the promises.
+ */
+export async function resolvePromisesInBatches<T>(
+  promises: Promise<T>[],
+  batchSize: number = 1
+): Promise<T[]> {
+  const results: T[] = [];
+
+  for (let i = 0; i < promises.length; i += batchSize) {
+    const batch = promises.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch); // Resolve batch in parallel
+    results.push(...batchResults); // Add batch results to the main results array
+  }
+
+  return results;
+}
