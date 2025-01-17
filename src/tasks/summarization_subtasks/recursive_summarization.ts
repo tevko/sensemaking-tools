@@ -44,17 +44,18 @@ export abstract class RecursiveSummary {
  * Batching can be used to execute mutiple promises in parallel that will then be resolved in
  * order. The batchSize can be though of as the maximum number of parallel threads.
  * @param promises the promises to resolve.
- * @param batchSize how many promises to resolve at once, the default is 1 so no parallelization.
+ * @param numParallelExecutions how many promises to resolve at once, the default is 2 based on the
+ * current Gemini qps quotas, see: https://cloud.google.com/gemini/docs/quotas#per-second.
  * @returns A list of the resolved values of the promises.
  */
-export async function resolvePromisesInBatches<T>(
+export async function resolvePromisesInParallel<T>(
   promises: Promise<T>[],
-  batchSize: number = 1
+  numParallelExecutions: number = 2
 ): Promise<T[]> {
   const results: T[] = [];
 
-  for (let i = 0; i < promises.length; i += batchSize) {
-    const batch = promises.slice(i, i + batchSize);
+  for (let i = 0; i < promises.length; i += numParallelExecutions) {
+    const batch = promises.slice(i, i + numParallelExecutions);
     const batchResults = await Promise.all(batch); // Resolve batch in parallel
     results.push(...batchResults); // Add batch results to the main results array
   }

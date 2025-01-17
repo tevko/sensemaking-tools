@@ -14,7 +14,7 @@
 
 // Functions for different ways to summarize Comment and Vote data.
 
-import { RecursiveSummary, resolvePromisesInBatches } from "./recursive_summarization";
+import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { TopicStats } from "../../stats_util";
 
 export class TopicsSummary extends RecursiveSummary {
@@ -35,7 +35,7 @@ export class TopicsSummary extends RecursiveSummary {
     const topicSummaries: Array<Promise<string>> = topicStats.map((topicStat) =>
       this.getTopicSummary(topicStat)
     );
-    const topicSummaryText: string = await resolvePromisesInBatches(topicSummaries).then(
+    const topicSummaryText: string = await resolvePromisesInParallel(topicSummaries).then(
       (summaries) => summaries.join("\n")
     );
 
@@ -61,7 +61,7 @@ ${topicSummaryText}
     const nSubtopics: number = topicStat.subtopicStats?.length || 0;
     const subtopicsSummaryText: string =
       subtopicSummaries.length > 0
-        ? await resolvePromisesInBatches(subtopicSummaries).then((summaries) =>
+        ? await resolvePromisesInParallel(subtopicSummaries).then((summaries) =>
             summaries.join("\n")
           )
         : "";

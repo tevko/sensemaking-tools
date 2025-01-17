@@ -20,7 +20,7 @@ import {
   getMinAgreeProb,
   SummaryStats,
 } from "../../stats_util";
-import { RecursiveSummary, resolvePromisesInBatches } from "./recursive_summarization";
+import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { Comment, CommentWithVoteTallies, isCommentWithVoteTalliesType } from "../../types";
 
 /**
@@ -79,7 +79,7 @@ export class GroupsSummary extends RecursiveSummary {
         // Before using Group Informed Consensus a minimum bar of agreement must be enforced. The
         // absolute value is used to get when all groups agree with a comment OR all groups agree
         // that they don't agree with a comment.
-        return Math.abs(getMinAgreeProb(comment)) >= this.minConsensusAgreeProb;
+        return Math.abs(getMinAgreeProb(comment)) > this.minConsensusAgreeProb;
       });
     const filteredSummaryStats = new SummaryStats(filteredComments);
     return filteredSummaryStats.topK((comment) => getGroupInformedConsensus(comment), this.topK);
@@ -94,7 +94,11 @@ export class GroupsSummary extends RecursiveSummary {
    * @returns the top disagreed on comments
    */
   private getTopDisagreeCommentsAcrossGroups(groupNames: string[]): Comment[] {
+    const topAgreeIds = this.getTopAgreeCommentsAcrossGroups().map((comment) => comment.id);
     const filteredComments = this.filteredInput.comments
+      .filter((comment: Comment) => {
+        return !topAgreeIds.includes(comment.id);
+      })
       .filter(isCommentWithVoteTalliesType)
       .filter((comment: CommentWithVoteTallies) => {
         // Each the groups must disagree with the rest of the groups above an absolute
@@ -200,7 +204,7 @@ export class GroupsSummary extends RecursiveSummary {
     // used.
     // Join the individual group descriptions whenever they finish, and when that's done wait for
     // the group comparison to be created and combine them all together.
-    return resolvePromisesInBatches([
+    return resolvePromisesInParallel([
       ...groupDescriptions,
       this.getGroupComparison(groupNames),
     ]).then((results: string[]) => {
