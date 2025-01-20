@@ -30,7 +30,7 @@ import { summarizeByType } from "./tasks/summarization";
 import { getPrompt, hydrateCommentRecord, retryCall } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
-import { groundSummary } from "./validation/grounding";
+import { groundSummary, parseStringIntoSummary } from "./validation/grounding";
 import { SummaryStats } from "./stats_util";
 import { summaryContainsStats } from "./validation/stats_checker";
 
@@ -134,7 +134,11 @@ export class Sensemaker {
       [summaryStats, summarizationType]
     );
 
-    const groundedSummary = await groundSummary(this.getModel("groundingModel"), summary, comments);
+    // We only apply the grounding routines when not doing multi step summarization
+    const groundedSummary =
+      summarizationType == SummarizationType.MULTI_STEP
+        ? parseStringIntoSummary(summary, comments)
+        : await groundSummary(this.getModel("groundingModel"), summary, comments);
     console.log(`Summarization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
     return groundedSummary;
   }
