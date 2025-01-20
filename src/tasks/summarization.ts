@@ -17,7 +17,7 @@
 import { Model } from "../models/model";
 import { SummarizationType } from "../types";
 import { formatCommentsWithVotes, getPrompt, retryCall } from "../sensemaker_utils";
-import { SummaryStats, TopicStats } from "../stats_util";
+import { SummaryStats, GroupedSummaryStats, TopicStats } from "../stats_util";
 import { MAX_RETRIES } from "../models/vertex_model";
 import { IntroSummary } from "./summarization_subtasks/intro";
 import { GroupsSummary } from "./summarization_subtasks/groups";
@@ -139,9 +139,17 @@ export async function summarizeByType(
   if (summarizationType === SummarizationType.BASIC) {
     return await basicSummarize(summaryStats, model, additionalInstructions);
   } else if (summarizationType === SummarizationType.VOTE_TALLY) {
-    return await voteTallySummarize(summaryStats, model, additionalInstructions);
+    return await voteTallySummarize(
+      summaryStats as GroupedSummaryStats,
+      model,
+      additionalInstructions
+    );
   } else if (summarizationType === SummarizationType.MULTI_STEP) {
-    return await new MultiStepSummary(summaryStats, model, additionalInstructions).getSummary();
+    return await new MultiStepSummary(
+      summaryStats as GroupedSummaryStats,
+      model,
+      additionalInstructions
+    ).getSummary();
   } else {
     throw new TypeError("Unknown Summarization Type.");
   }
@@ -151,12 +159,12 @@ export async function summarizeByType(
  *
  */
 export class MultiStepSummary {
-  private summaryStats: SummaryStats;
+  private summaryStats: GroupedSummaryStats;
   private model: Model;
   // TODO: Figure out how we handle additional instructions with this structure.
   private additionalInstructions?: string;
 
-  constructor(summaryStats: SummaryStats, model: Model, additionalInstructions?: string) {
+  constructor(summaryStats: GroupedSummaryStats, model: Model, additionalInstructions?: string) {
     this.summaryStats = summaryStats;
     this.model = model;
     this.additionalInstructions = additionalInstructions;

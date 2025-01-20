@@ -87,38 +87,38 @@ comment2`
   });
   describe("groupCommentsByTopic", () => {
     it("should group comments by topic and subtopic", () => {
-      const categorizedComments: Comment[] = [
-        {
-          id: "1",
-          text: "Comment 1",
-          topics: [
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
-            { name: "Topic 2", subtopics: [{ name: "Subtopic 2.1" }] },
-          ],
-        },
-        {
-          id: "2",
-          text: "Comment 2",
-          topics: [
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
-            { name: "Topic 1", subtopics: [{ name: "Subtopic 1.2" }] },
-          ],
-        },
-      ];
+      const comment1: Comment = {
+        id: "1",
+        text: "Comment 1",
+        topics: [
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
+          { name: "Topic 2", subtopics: [{ name: "Subtopic 2.1" }] },
+        ],
+      };
+      const comment2: Comment = {
+        id: "2",
+        text: "Comment 2",
+        topics: [
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.2" }] },
+        ],
+      };
+
+      const categorizedComments: Comment[] = [comment1, comment2];
 
       const expectedOutput = {
         "Topic 1": {
           "Subtopic 1.1": {
-            "1": "Comment 1",
-            "2": "Comment 2",
+            "1": comment1,
+            "2": comment2,
           },
           "Subtopic 1.2": {
-            "2": "Comment 2",
+            "2": comment2,
           },
         },
         "Topic 2": {
           "Subtopic 2.1": {
-            "1": "Comment 1",
+            "1": comment1,
           },
         },
       };

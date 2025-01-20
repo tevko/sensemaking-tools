@@ -14,10 +14,10 @@
 
 // Functions for different ways to summarize Comment and Vote data.
 
-import { TopicStats } from "../../stats_util";
+import { SummaryStats, TopicStats } from "../../stats_util";
 import { RecursiveSummary } from "./recursive_summarization";
 
-export class IntroSummary extends RecursiveSummary {
+export class IntroSummary extends RecursiveSummary<SummaryStats> {
   getSummary() {
     const commentCountFormatted = this.input.commentCount.toLocaleString();
     const voteCountFormatted = this.input.voteCount.toLocaleString();

@@ -130,12 +130,12 @@ export function hydrateCommentRecord(
  */
 export function groupCommentsBySubtopic(categorized: Comment[]): {
   [topicName: string]: {
-    [subtopicName: string]: { [commentId: string]: string };
+    [subtopicName: string]: { [commentId: string]: Comment };
   };
 } {
   const groupedComments: {
     [topicName: string]: {
-      [subtopicName: string]: { [commentId: string]: string };
+      [subtopicName: string]: { [commentId: string]: Comment };
     };
   } = {};
   for (const comment of categorized) {
@@ -152,7 +152,7 @@ export function groupCommentsBySubtopic(categorized: Comment[]): {
           if (!groupedComments[topic.name][subtopic.name]) {
             groupedComments[topic.name][subtopic.name] = {}; // init new subtopic name
           }
-          groupedComments[topic.name][subtopic.name][comment.id] = comment.text;
+          groupedComments[topic.name][subtopic.name][comment.id] = comment;
         }
       }
     }

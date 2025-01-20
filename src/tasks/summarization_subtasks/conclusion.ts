@@ -14,9 +14,10 @@
 
 // Functions for different ways to summarize Comment and Vote data.
 
+import { GroupedSummaryStats } from "../../stats_util";
 import { RecursiveSummary } from "./recursive_summarization";
 
-export class ConclusionSummary extends RecursiveSummary {
+export class ConclusionSummary extends RecursiveSummary<GroupedSummaryStats> {
   getSummary() {
     return Promise.resolve(
       `## Conclusion

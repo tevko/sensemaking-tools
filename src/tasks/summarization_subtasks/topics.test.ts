@@ -13,29 +13,45 @@
 // limitations under the License.
 
 import { VertexModel } from "../../models/vertex_model";
-import { SummaryStats } from "../../stats_util";
-import { Comment } from "../../types";
+import { GroupedSummaryStats } from "../../stats_util";
+import { CommentWithVoteTallies } from "../../types";
 import { TopicsSummary } from "./topics";
 
-const TEST_COMMENTS: Comment[] = [
+const TEST_COMMENTS: CommentWithVoteTallies[] = [
   {
     id: "1",
     text: "comment 1",
+    voteTalliesByGroup: {
+      "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
+      "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
+    },
     topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
   },
   {
     id: "2",
     text: "comment 2",
+    voteTalliesByGroup: {
+      "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
+      "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
+    },
     topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] }],
   },
   {
     id: "3",
     text: "comment 3",
+    voteTalliesByGroup: {
+      "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
+      "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
+    },
     topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2" }] }],
   },
   {
     id: "4",
     text: "comment 4",
+    voteTalliesByGroup: {
+      "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
+      "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
+    },
     topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] }],
   },
 ];
@@ -44,7 +60,7 @@ describe("TopicsSummaryTest", () => {
   it("should create a properly formatted topics summary", async () => {
     expect(
       await new TopicsSummary(
-        new SummaryStats(TEST_COMMENTS),
+        new GroupedSummaryStats(TEST_COMMENTS),
         new VertexModel("project123", "usa")
       ).getSummary()
     ).toEqual(`## Topics

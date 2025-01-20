@@ -32,9 +32,7 @@ export function getAgreeProbability(voteTally: VoteTally): number {
  * A function which computes group informed consensus for the given set of vote tallies, given vote tally data, aggregated by some groupBy factor.
  * Computed as the product of the aggree probabilities
  */
-export function getGroupInformedConsensus(
-  comment: Comment & { voteTalliesByGroup: { [key: string]: VoteTally } }
-): number {
+export function getGroupInformedConsensus(comment: CommentWithVoteTallies): number {
   return Object.values(comment.voteTalliesByGroup).reduce(
     (product, voteTally) => product * getAgreeProbability(voteTally),
     1
@@ -44,9 +42,7 @@ export function getGroupInformedConsensus(
 /**
  * A function which returns the minimum aggree probability across groups
  */
-export function getMinAgreeProb(
-  comment: Comment & { voteTalliesByGroup: { [key: string]: VoteTally } }
-): number {
+export function getMinAgreeProb(comment: CommentWithVoteTallies): number {
   return Math.min(...Object.values(comment.voteTalliesByGroup).map(getAgreeProbability));
 }
 
@@ -54,7 +50,10 @@ export function getMinAgreeProb(
  * Computes the difference between the MAP agree probabilities for a given group, as computed by the getAgreeProbability function, as compared
  * with the rest of the conversation
  */
-export function getGroupAgreeDifference(comment: CommentWithVoteTallies, group: string): number {
+export function getGroupAgreeProbDifference(
+  comment: CommentWithVoteTallies,
+  group: string
+): number {
   const groupAgreeProb = getAgreeProbability(comment.voteTalliesByGroup[group]);
   // compute the vote tally for the remainder of the conversation by reducing over and adding up all other group vote tallies
   const otherGroupsVoteTally = Object.entries(comment.voteTalliesByGroup)
@@ -90,18 +89,21 @@ export function getCommentVoteCount(comment: Comment): number {
 // Statistics to include in the summary.
 export class SummaryStats {
   comments: Comment[];
+  minAgreeProbCommonGround = 0.6;
+  minAgreeProbDifference = 0.3;
+  maxSampleSize = 5;
   constructor(comments: Comment[]) {
     this.comments = comments;
   }
 
-  // The total number of votes in all comments in a conversation.
+  // The total number of votes across the entire set of input comments
   get voteCount(): number {
     return this.comments.reduce((sum: number, comment: Comment) => {
       return sum + getCommentVoteCount(comment);
     }, 0);
   }
 
-  // The total number of comments in a conversation.
+  // The total number of comments in the set of input comments
   get commentCount(): number {
     return this.comments.length;
   }
@@ -110,26 +112,14 @@ export class SummaryStats {
    * Returns the top k comments according to the given metric. K defaults to 12.
    */
   topK(
-    sortBy: (comment: CommentWithVoteTallies) => number,
-    k: number = 12,
-    filterFn: (comment: CommentWithVoteTallies) => boolean = () => true
+    sortBy: (comment: Comment) => number,
+    k: number = this.maxSampleSize,
+    filterFn: (comment: Comment) => boolean = () => true
   ): Comment[] {
     return this.comments
-      .filter(isCommentWithVoteTalliesType)
       .filter(filterFn)
       .sort((a, b) => sortBy(b) - sortBy(a))
       .slice(0, k);
-  }
-
-  /**
-   * Sort through the comments with the highest getGroupAgreeDifference for the corresponding group
-   */
-  getRepresentativeComments(group: string, k: number = 12) {
-    return this.topK(
-      (comment: CommentWithVoteTallies) => getGroupAgreeDifference(comment, group),
-      k,
-      isCommentWithVoteTalliesType
-    );
   }
 
   /**
@@ -148,17 +138,23 @@ export class SummaryStats {
     for (const topicName in commentsByTopic) {
       const subtopics = commentsByTopic[topicName];
       const subtopicStats: TopicStats[] = [];
-      let totalTopicComments = 0;
+      let totalTopicComments: number = 0;
+      const topicComments: Comment[] = [];
 
       for (const subtopicName in subtopics) {
-        const commentCount = Object.keys(subtopics[subtopicName]).length;
+        // get corresonding comments, and update counts
+        const comments: Comment[] = Object.values(subtopics[subtopicName]);
+        const commentCount = comments.length;
         totalTopicComments += commentCount;
-        subtopicStats.push({ name: subtopicName, commentCount });
+        // aggregate comment objects
+        topicComments.push(...comments);
+        subtopicStats.push({ name: subtopicName, commentCount, comments: comments });
       }
 
       topicStats.push({
         name: topicName,
         commentCount: totalTopicComments,
+        comments: topicComments,
         subtopicStats: subtopicStats,
       });
     }
@@ -180,6 +176,103 @@ export class SummaryStats {
     });
 
     return topicStats;
+  }
+}
+
+export class GroupedSummaryStats extends SummaryStats {
+  filteredComments: CommentWithVoteTallies[];
+  private minVoteCount = 20;
+
+  constructor(comments: Comment[]) {
+    super(comments);
+    this.filteredComments = comments.filter(isCommentWithVoteTalliesType).filter((comment) => {
+      return getCommentVoteCount(comment) >= this.minVoteCount;
+    });
+  }
+
+  /**
+   * Returns the top k comments according to the given metric. K defaults to 12.
+   */
+  topK(
+    sortBy: (comment: CommentWithVoteTallies) => number,
+    k: number = this.maxSampleSize,
+    filterFn: (comment: CommentWithVoteTallies) => boolean = () => true
+  ): Comment[] {
+    return this.filteredComments
+      .filter(filterFn)
+      .sort((a, b) => sortBy(b) - sortBy(a))
+      .slice(0, k);
+  }
+
+  /**
+   * Gets the topK agreed upon comments across all groups.
+   *
+   * This is measured via the getGroupInformedConsensus metric, subject to the constraints of
+   * this.minVoteCount and this.minAgreeProbCommonGround settings.
+   * @param k dfaults to this.maxSampleSize
+   * @returns the top agreed on comments
+   */
+  getCommonGroundComments(k: number = this.maxSampleSize) {
+    return this.topK(
+      (comment) => getGroupInformedConsensus(comment),
+      k,
+      // Before using Group Informed Consensus a minimum bar of agreement between groups is enforced
+      (comment: CommentWithVoteTallies) => getMinAgreeProb(comment) >= this.minAgreeProbCommonGround
+    );
+  }
+
+  /**
+   * Sort through the comments with the highest getGroupAgreeDifference for the corresponding group,
+   * subject to this.minVoteCount, not matching the common ground comment set by this.minAgreeProbCommonGround,
+   * and this.minAgreeProbDifference
+   * @param group The name of a single group
+   * @param k dfaults to this.maxSampleSize
+   * @returns The corresponding set of comments
+   */
+  getGroupRepresentativeComments(group: string, k: number = this.maxSampleSize) {
+    return this.topK(
+      (comment: CommentWithVoteTallies) => getGroupAgreeProbDifference(comment, group),
+      k,
+      (comment: CommentWithVoteTallies) =>
+        getMinAgreeProb(comment) < this.minAgreeProbCommonGround &&
+        getGroupAgreeProbDifference(comment, group) > this.minAgreeProbDifference
+    );
+  }
+
+  /**
+   * Returns the top K comments that best distinguish differences of opinion between groups.
+   *
+   * This is computed as the difference in how likely each group is to agree with a given comment
+   * as compared with the rest of the participant body, as computed by the getGroupAgreeDifference method,
+   * and subject to this.minVoteCount, this.minAgreeProbCommonGround and this.minAgreeProbDifference.
+   *
+   * @param groups The name of a single group
+   * @param k defaults to this.maxSampleSize
+   * @returns the top disagreed on comments
+   */
+  getDifferencesBetweenGroupsComments(groupNames: string[], k: number = this.maxSampleSize) {
+    return this.topK(
+      // Get the maximum absolute group agree difference for any group.
+      (comment) =>
+        Math.max(
+          ...groupNames.map((name: string) => {
+            return Math.abs(getGroupAgreeProbDifference(comment, name));
+          })
+        ),
+      k,
+      (comment: CommentWithVoteTallies) => {
+        // Each the groups must disagree with the rest of the groups above an absolute
+        // threshold before we consider taking the topK.
+        for (const groupName of groupNames) {
+          if (
+            Math.abs(getGroupAgreeProbDifference(comment, groupName)) < this.minAgreeProbDifference
+          ) {
+            return false;
+          }
+        }
+        return true;
+      }
+    );
   }
 
   getStatsByGroup(): GroupStats[] {
@@ -204,6 +297,7 @@ export class SummaryStats {
 export interface TopicStats {
   name: string;
   commentCount: number;
+  comments: Comment[];
   subtopicStats?: TopicStats[];
 }
 

@@ -15,9 +15,9 @@
 // Functions for different ways to summarize Comment and Vote data.
 
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
-import { TopicStats } from "../../stats_util";
+import { TopicStats, GroupedSummaryStats } from "../../stats_util";
 
-export class TopicsSummary extends RecursiveSummary {
+export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
   async getSummary() {
     // First construct the introductory description for the entire section
     const topicStats: TopicStats[] = this.input.getStatsByTopic();

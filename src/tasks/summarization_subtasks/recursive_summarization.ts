@@ -15,23 +15,14 @@
 // Functions for different ways to summarize Comment and Vote data.
 
 import { Model } from "../../models/model";
-import { SummaryStats, getCommentVoteCount } from "../../stats_util";
-import { Comment } from "../../types";
 
-export abstract class RecursiveSummary {
-  private minimumCommentCount = 30;
-  protected input: SummaryStats;
+export abstract class RecursiveSummary<InputType> {
+  protected input: InputType;
   // Input data with at least minimumCommentCount votes.
-  protected filteredInput: SummaryStats;
   protected model: Model;
 
-  constructor(input: SummaryStats, model: Model) {
+  constructor(input: InputType, model: Model) {
     this.input = input;
-    // Only consider comments with at least minimumCommentCount votes.
-    const filteredInput = input.comments.filter((comment: Comment) => {
-      return comment.voteTalliesByGroup && getCommentVoteCount(comment) >= this.minimumCommentCount;
-    });
-    this.filteredInput = new SummaryStats(filteredInput);
     this.model = model;
   }
 

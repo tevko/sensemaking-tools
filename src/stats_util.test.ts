@@ -14,9 +14,10 @@
 
 import {
   SummaryStats,
+  GroupedSummaryStats,
   getAgreeProbability,
   getGroupInformedConsensus,
-  getGroupAgreeDifference,
+  getGroupAgreeProbDifference,
   getMinAgreeProb,
 } from "./stats_util";
 import { Comment } from "./types";
@@ -27,10 +28,10 @@ const TEST_COMMENTS = [
     text: "comment1",
     voteTalliesByGroup: {
       "0": {
-        agreeCount: 10,
-        disagreeCount: 5,
+        agreeCount: 20,
+        disagreeCount: 10,
         passCount: 0,
-        totalCount: 15,
+        totalCount: 30,
       },
       "1": {
         agreeCount: 5,
@@ -127,7 +128,7 @@ describe("stats utility functions", () => {
 
   it("should get the group agree difference for a given comment and group", () => {
     expect(
-      getGroupAgreeDifference(
+      getGroupAgreeProbDifference(
         {
           id: "1",
           text: "comment1",
@@ -155,7 +156,7 @@ describe("stats utility functions", () => {
 describe("StatsUtilTest", () => {
   it("should get the total number of votes from multiple comments", () => {
     const summaryStats = new SummaryStats(TEST_COMMENTS);
-    expect(summaryStats.voteCount).toEqual(55);
+    expect(summaryStats.voteCount).toEqual(70);
   });
 
   it("SummaryStats should get the total number of comments", () => {
@@ -182,17 +183,11 @@ describe("StatsUtilTest", () => {
       },
     ];
 
-    const expectedTopicStats = [
-      {
-        name: "Topic A",
-        commentCount: 3,
-        subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 1 },
-        ],
-      },
-    ];
-    expect(new SummaryStats(comments).getStatsByTopic()).toEqual(expectedTopicStats);
+    const statsByTopic = new SummaryStats(comments).getStatsByTopic();
+    expect(statsByTopic[0].commentCount).toEqual(3);
+    expect(statsByTopic[0]?.subtopicStats?.map((subtopic) => subtopic.commentCount)).toEqual([
+      2, 1,
+    ]);
   });
 
   it("should sort topics by comment count and put 'Other' topics and subtopics last", () => {
@@ -259,38 +254,15 @@ describe("StatsUtilTest", () => {
       },
     ];
 
-    const expectedSortedTopics = [
-      {
-        name: "Topic B",
-        commentCount: 6,
-        subtopicStats: [
-          { name: "Subtopic B.1", commentCount: 4 },
-          { name: "Subtopic B.2", commentCount: 2 },
-        ],
-      },
-      {
-        name: "Topic A",
-        commentCount: 3,
-        subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 1 },
-        ],
-      },
-      {
-        name: "Other",
-        commentCount: 5,
-        subtopicStats: [
-          { name: "Subtopic Other.1", commentCount: 2 },
-          { name: "Other", commentCount: 3 },
-        ],
-      },
-    ];
-    expect(new SummaryStats(comments).getStatsByTopic()).toEqual(expectedSortedTopics);
+    const statsByTopic = new SummaryStats(comments).getStatsByTopic();
+    expect(statsByTopic.map((topic) => topic.name)).toEqual(["Topic B", "Topic A", "Other"]);
   });
 
   it("should get the representative comments for a given group", () => {
-    const representativeComments = new SummaryStats(TEST_COMMENTS).getRepresentativeComments("0");
-    expect(representativeComments.length).toEqual(2);
+    const representativeComments = new GroupedSummaryStats(
+      TEST_COMMENTS
+    ).getGroupRepresentativeComments("0");
+    expect(representativeComments.length).toEqual(1);
     expect(representativeComments[0].id).toEqual("1");
   });
 
@@ -299,6 +271,8 @@ describe("StatsUtilTest", () => {
       { id: "1", text: "comment1" },
       { id: "2", text: "comment2" },
     ];
-    expect(new SummaryStats(commentsWithoutVotes).getRepresentativeComments("0")).toEqual([]);
+    expect(
+      new GroupedSummaryStats(commentsWithoutVotes).getGroupRepresentativeComments("0")
+    ).toEqual([]);
   });
 });

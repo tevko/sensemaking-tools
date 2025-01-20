@@ -14,14 +14,9 @@
 
 import { getPrompt } from "../../sensemaker_utils";
 import { commentCitation } from "../../validation/grounding";
-import {
-  getGroupAgreeDifference,
-  getGroupInformedConsensus,
-  getMinAgreeProb,
-  SummaryStats,
-} from "../../stats_util";
+import { GroupStats, GroupedSummaryStats } from "../../stats_util";
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
-import { Comment, CommentWithVoteTallies, isCommentWithVoteTalliesType } from "../../types";
+import { Comment } from "../../types";
 
 /**
  * Format a list of strings to be a human readable list ending with "and"
@@ -49,86 +44,13 @@ function formatStringList(items: string[]): string {
  * A summary section that describes the groups in the data and the similarities/differences between
  * them.
  */
-export class GroupsSummary extends RecursiveSummary {
-  // The number of top comments to consider per section when summarizing.
-  private topK = 5;
-  // The minimum agree probability across groups to be considered a consensus statement.
-  private minConsensusAgreeProb = 0.6;
-  // The minimum agreement probability difference.
-  private minAgreeProbDifference = 0.3;
-
-  /**
-   * Gets the topK agreed upon comments for a group.
-   * @param groupName the group to consider agreement for
-   * @returns the top comments as a list of strings
-   */
-  private getTopAgreeCommentsForGroup = (groupName: string): Comment[] =>
-    this.filteredInput.topK((comment) => getGroupAgreeDifference(comment, groupName), this.topK);
-
-  /**
-   * Gets the topK agreed upon comments across all groups.
-   *
-   * This captures when the groups acted similarly, so it includes both when all the groups
-   * agreed with something and when all the groups disagreed with something.
-   * @returns the top agreed on comments
-   */
-  private getTopAgreeCommentsAcrossGroups(): Comment[] {
-    const filteredComments = this.filteredInput.comments
-      .filter(isCommentWithVoteTalliesType)
-      .filter((comment: CommentWithVoteTallies) => {
-        // Before using Group Informed Consensus a minimum bar of agreement must be enforced. The
-        // absolute value is used to get when all groups agree with a comment OR all groups agree
-        // that they don't agree with a comment.
-        return Math.abs(getMinAgreeProb(comment)) > this.minConsensusAgreeProb;
-      });
-    const filteredSummaryStats = new SummaryStats(filteredComments);
-    return filteredSummaryStats.topK((comment) => getGroupInformedConsensus(comment), this.topK);
-  }
-
-  /**
-   * Returns the top K comments that best distinguish differences of opinion between groups.
-   *
-   * This is computed as the difference in how likely each group is to agree with a given comment
-   * as compared with the rest of the participant body.
-   *
-   * @returns the top disagreed on comments
-   */
-  private getTopDisagreeCommentsAcrossGroups(groupNames: string[]): Comment[] {
-    const topAgreeIds = this.getTopAgreeCommentsAcrossGroups().map((comment) => comment.id);
-    const filteredComments = this.filteredInput.comments
-      .filter((comment: Comment) => {
-        return !topAgreeIds.includes(comment.id);
-      })
-      .filter(isCommentWithVoteTalliesType)
-      .filter((comment: CommentWithVoteTallies) => {
-        // Each the groups must disagree with the rest of the groups above an absolute
-        // threshold before we consider taking the topK.
-        for (const groupName of groupNames) {
-          if (Math.abs(getGroupAgreeDifference(comment, groupName)) < this.minAgreeProbDifference) {
-            return false;
-          }
-        }
-        return true;
-      });
-    const filteredSummaryStats = new SummaryStats(filteredComments);
-    return filteredSummaryStats.topK(
-      // Get the maximum absolute group agree difference for any group.
-      (comment) =>
-        Math.max(
-          ...groupNames.map((name: string) => {
-            return Math.abs(getGroupAgreeDifference(comment, name));
-          })
-        ),
-      this.topK
-    );
-  }
-
+export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
   /**
    * Describes what makes the groups similar and different.
    * @returns a two sentence description of similarities and differences.
    */
   private async getGroupComparison(groupNames: string[]): Promise<string> {
-    const topAgreeCommentsAcrossGroups = this.getTopAgreeCommentsAcrossGroups();
+    const topAgreeCommentsAcrossGroups = this.input.getCommonGroundComments();
     const groupComparisonSimilar = this.model.generateText(
       getPrompt(
         "Write one sentence describing what makes the different groups that had high inter group " +
@@ -137,7 +59,8 @@ export class GroupsSummary extends RecursiveSummary {
       )
     );
 
-    const topDisagreeCommentsAcrossGroups = this.getTopDisagreeCommentsAcrossGroups(groupNames);
+    const topDisagreeCommentsAcrossGroups =
+      this.input.getDifferencesBetweenGroupsComments(groupNames);
     const groupComparisonDifferent = this.model.generateText(
       getPrompt(
         "The following are comments that different groups had different opinions on. Write one sentence describing " +
@@ -179,7 +102,7 @@ export class GroupsSummary extends RecursiveSummary {
   private async getGroupDescriptions(groupNames: string[]): Promise<string> {
     const groupDescriptions = [];
     for (const groupName of groupNames) {
-      const topCommentsForGroup = this.getTopAgreeCommentsForGroup(groupName);
+      const topCommentsForGroup = this.input.getGroupRepresentativeComments(groupName);
       groupDescriptions.push(
         this.model
           .generateText(
@@ -213,12 +136,12 @@ export class GroupsSummary extends RecursiveSummary {
   }
 
   async getSummary() {
-    const groupStats = this.filteredInput.getStatsByGroup();
+    const groupStats = this.input.getStatsByGroup();
     const groupCount = groupStats.length;
-    const groupNamesWithQuotes = groupStats.map((stat) => {
+    const groupNamesWithQuotes = groupStats.map((stat: GroupStats) => {
       return `"${stat.name}"`;
     });
-    const groupNames = groupStats.map((stat) => {
+    const groupNames = groupStats.map((stat: GroupStats) => {
       return stat.name;
     });
 

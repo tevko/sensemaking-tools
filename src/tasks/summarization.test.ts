@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { SummaryStats } from "../stats_util";
+import { SummaryStats, TopicStats } from "../stats_util";
 import { getSummarizationInstructions, _quantifyTopicNames, _getIntroText } from "./summarization";
 
 const TEST_COMMENTS = [
@@ -85,13 +85,14 @@ describe("SummaryTest", () => {
   });
 
   it("should quantify topic names", () => {
-    const topicStats = [
+    const topicStats: TopicStats[] = [
       {
         name: "Topic A",
         commentCount: 5,
+        comments: [{ id: "1", text: "comment1" }],
         subtopicStats: [
-          { name: "Subtopic A.1", commentCount: 2 },
-          { name: "Subtopic A.2", commentCount: 3 },
+          { name: "Subtopic A.1", commentCount: 2, comments: [{ id: "1", text: "comment1" }] },
+          { name: "Subtopic A.2", commentCount: 3, comments: [{ id: "2", text: "comment2" }] },
         ],
       },
     ];
