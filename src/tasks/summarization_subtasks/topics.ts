@@ -15,7 +15,14 @@
 // Functions for different ways to summarize Comment and Vote data.
 
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
-import { TopicStats, GroupedSummaryStats } from "../../stats_util";
+import { TopicStats, GroupedSummaryStats, GroupStats } from "../../stats_util";
+import { getPrompt } from "../../sensemaker_utils";
+import { Comment } from "../../types";
+import { commentCitation } from "../../validation/grounding";
+
+const commonGroundInstructions = `Here are several comments sharing different opinions. Your job is to summarize these comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of these comments. Write a concise summary of these comments that is at least one sentence and at most three sentences long. The summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the comments. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
+
+const differencesOfOpinionInstructions = `Here are several comments which generated disagreement. Your job is summarize the ideas contained in the comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Write a concise summary of these comments that is at least one sentence and at most three sentences long. Refer to the people who made these comments as participants, not commenters.  Do not talk about how strongly they disagree on these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. The summary should not imply that these views were agreed on by all participants. Your output should begin in the form "There was low consensus". Do not pretend that these comments were written by different people.  For each sentence use a unique phrase to indicate that there was low consensus on the topic, and do not present each comment as an alternative idea. Do not yap.`;
 
 export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
   async getSummary() {
@@ -90,17 +97,59 @@ ${subtopicsSummaryText}
   async getSubtopicSummary(subtopicStat: TopicStats): Promise<string> {
     const sectionTitle: string = `${subtopicStat.name} (${subtopicStat.commentCount} comments)`;
 
-    // For now, these are mocked out...
-    const commonGroundSummary = "Some points of common ground...";
-    const differencesSummary = "Areas of disagreement between groups...";
+    const groupStats = this.input.getStatsByGroup();
+    const groupNames = groupStats.map((stat: GroupStats) => {
+      return stat.name;
+    });
+
+    const commonGroundSummary = await this.getCommonGroundSummary();
+    const differencesSummary = await this.getDifferencesOfOpinionSummary(groupNames);
 
     return Promise.resolve(
       `#### ${sectionTitle}
 
-Common ground: ${commonGroundSummary}
+Common ground between groups: ${commonGroundSummary}
 
 Differences of opinion: ${differencesSummary}
 `
     );
+  }
+
+  /**
+   * Summarizes the comments on which there was the strongest agreement between groups.
+   * @returns a two sentence description of similarities and differences.
+   */
+  async getCommonGroundSummary(): Promise<string> {
+    const commonGroundComments = this.input.getCommonGroundComments();
+    return this.model.generateText(
+      getPrompt(
+        commonGroundInstructions,
+        commonGroundComments.map((comment: Comment): string => comment.text)
+      )
+    );
+  }
+
+  /**
+   * Summarizes the comments on which there was the strongest disagreement between groups.
+   * @returns a two sentence description of similarities and differences.
+   */
+  async getDifferencesOfOpinionSummary(groupNames: string[]): Promise<string> {
+    const topDisagreeCommentsAcrossGroups =
+      this.input.getDifferencesBetweenGroupsComments(groupNames);
+    return this.model.generateText(
+      getPrompt(
+        differencesOfOpinionInstructions,
+        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
+      )
+    );
+  }
+
+  /**
+   * Create citations for comments in the format of "[12, 43, 56]"
+   * @param comments the comments to use for citations
+   * @returns the formatted citations
+   */
+  private getCommentCitations(comments: Comment[]): string {
+    return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
   }
 }

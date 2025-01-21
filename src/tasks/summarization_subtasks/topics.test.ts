@@ -17,6 +17,10 @@ import { GroupedSummaryStats } from "../../stats_util";
 import { CommentWithVoteTallies } from "../../types";
 import { TopicsSummary } from "./topics";
 
+// Mock the model response. This mock needs to be set up to return response specific for each test.
+let mockCommonGroundSummary: jest.SpyInstance;
+let mockDifferencesSummary: jest.SpyInstance;
+
 const TEST_COMMENTS: CommentWithVoteTallies[] = [
   {
     id: "1",
@@ -57,7 +61,22 @@ const TEST_COMMENTS: CommentWithVoteTallies[] = [
 ];
 
 describe("TopicsSummaryTest", () => {
+  beforeEach(() => {
+    mockCommonGroundSummary = jest.spyOn(TopicsSummary.prototype, "getCommonGroundSummary");
+    mockDifferencesSummary = jest.spyOn(TopicsSummary.prototype, "getDifferencesOfOpinionSummary");
+  });
+
+  afterEach(() => {
+    mockCommonGroundSummary.mockRestore();
+    mockDifferencesSummary.mockRestore();
+  });
   it("should create a properly formatted topics summary", async () => {
+    // Mock the LLM calls
+    mockCommonGroundSummary.mockReturnValue(Promise.resolve("Some points of common ground..."));
+    mockDifferencesSummary.mockReturnValue(
+      Promise.resolve("Areas of disagreement between groups...")
+    );
+
     expect(
       await new TopicsSummary(
         new GroupedSummaryStats(TEST_COMMENTS),
@@ -73,13 +92,13 @@ This topic included 2 subtopics.
 
 #### Subtopic A.1 (2 comments)
 
-Common ground: Some points of common ground...
+Common ground between groups: Some points of common ground...
 
 Differences of opinion: Areas of disagreement between groups...
 
 #### Subtopic A.2 (1 comments)
 
-Common ground: Some points of common ground...
+Common ground between groups: Some points of common ground...
 
 Differences of opinion: Areas of disagreement between groups...
 
@@ -90,7 +109,7 @@ This topic included 1 subtopic.
 
 #### Subtopic B.1 (1 comments)
 
-Common ground: Some points of common ground...
+Common ground between groups: Some points of common ground...
 
 Differences of opinion: Areas of disagreement between groups...
 
