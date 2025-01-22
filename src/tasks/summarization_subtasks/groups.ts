@@ -53,8 +53,9 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
     const topAgreeCommentsAcrossGroups = this.input.getCommonGroundComments();
     const groupComparisonSimilar = this.model.generateText(
       getPrompt(
-        "Write one sentence describing what makes the different groups that had high inter group " +
-          "agreement on this subset of comments. Frame it in terms of what the groups largely agree on.",
+        `Write one sentence describing the views of the ${groupNames.length} different opinion ` +
+        "groups that had high inter group agreement on this subset of comments. Frame it in " +
+        "terms of what the groups largely agree on.",
         topAgreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
       )
     );
@@ -64,7 +65,8 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
     const groupComparisonDifferent = this.model.generateText(
       getPrompt(
         "The following are comments that different groups had different opinions on. Write one sentence describing " +
-          "what groups had different opinions on. Frame it in terms of what differs between the groups.",
+          "what groups had different opinions on. Frame it in terms of what differs between the " +
+          "groups. Do not suggest the groups agree on these issues. Include every comment in the summary.",
         topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
       )
     );
@@ -147,7 +149,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
       `## Opinion Groups\n\n` +
       `${groupCount} distinct groups (named here as ${formatStringList(groupNamesWithQuotes)}) ` +
       `emerged with differing viewpoints in relation to the submitted comments. The groups are ` +
-      `based on people who vtend to vote more similarly to each other than to those outside the group. ` +
+      `based on people who tend to vote more similarly to each other than to those outside the group. ` +
       "However there are points of common ground where the groups voted similarly.\n\n";
     const groupDescriptions = this.getGroupDescriptions(groupNames);
 
