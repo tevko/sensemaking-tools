@@ -54,12 +54,18 @@ export async function getTopicsAndSubtopics(
 export async function getSummary(
   project: string,
   comments: Comment[],
-  topics?: Topic[]
+  topics?: Topic[],
+  additionalInstructions?: string
 ): Promise<Summary> {
   const sensemaker = new Sensemaker({
     defaultModel: new VertexModel(project, "us-central1"),
   });
-  return await sensemaker.summarize(comments, SummarizationType.MULTI_STEP, topics);
+  return await sensemaker.summarize(
+    comments,
+    SummarizationType.MULTI_STEP,
+    topics,
+    additionalInstructions
+  );
 }
 
 export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment[]> {

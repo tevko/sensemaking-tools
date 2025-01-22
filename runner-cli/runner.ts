@@ -31,6 +31,10 @@ async function main(): Promise<void> {
   program
     .option("-o, --outputFile <file>", "The output file name.")
     .option("-i, --inputFile <file>", "The input file name.")
+    .option(
+      "-a, --additionalInstructions <instructions>",
+      "A short description of the conversation to add context."
+    )
     .option("-v, --vertexProject <project>", "The Vertex Project name.");
   program.parse(process.argv);
   const options = program.opts();
@@ -46,7 +50,12 @@ async function main(): Promise<void> {
     topics = await getTopicsAndSubtopics(options.vertexProject, comments);
   }
 
-  const summary = await getSummary(options.vertexProject, comments, topics);
+  const summary = await getSummary(
+    options.vertexProject,
+    comments,
+    topics,
+    options.additionalInstructions
+  );
   const markdownContent = summary.getText("MARKDOWN");
   const htmlContent = `
 <!DOCTYPE html>

@@ -35,6 +35,10 @@ async function main(): Promise<void> {
   program
     .option("-o, --outputFile <file>", "The output file name.")
     .option("-i, --inputFile <file>", "The input file name.")
+    .option(
+      "-a, --additionalInstructions <instructions>",
+      "A short description of the conversation to add context."
+    )
     .option("-r, --rerunCount <count>", "The number of times to rerun.")
     .option("-v, --vertexProject <project>", "The Vertex Project name.");
   program.parse(process.argv);
@@ -49,7 +53,11 @@ async function main(): Promise<void> {
   });
 
   for (let i = 0; i < options.rerunCount; i++) {
-    const summary = await getSummary(options.vertexProject, comments);
+    const summary = await getSummary(
+      options.vertexProject,
+      comments,
+      options.additionalInstructions
+    );
     outputTexts = outputTexts.concat([
       {
         run: i,

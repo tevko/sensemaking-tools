@@ -54,9 +54,10 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
     const groupComparisonSimilar = this.model.generateText(
       getPrompt(
         `Write one sentence describing the views of the ${groupNames.length} different opinion ` +
-        "groups that had high inter group agreement on this subset of comments. Frame it in " +
-        "terms of what the groups largely agree on.",
-        topAgreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
+          "groups that had high inter group agreement on this subset of comments. Frame it in " +
+          "terms of what the groups largely agree on.",
+        topAgreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
+        this.additionalInstructions
       )
     );
 
@@ -67,7 +68,8 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
         "The following are comments that different groups had different opinions on. Write one sentence describing " +
           "what groups had different opinions on. Frame it in terms of what differs between the " +
           "groups. Do not suggest the groups agree on these issues. Include every comment in the summary.",
-        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
+        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
+        this.additionalInstructions
       )
     );
 
@@ -114,7 +116,8 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
                 `about demographics. Avoid politically charged language (e.g., "conservative," ` +
                 `"liberal", or "progressive"). Instead, describe the group based on their ` +
                 `demonstrated preferences within the conversation.`,
-              topCommentsForGroup.map((comment: Comment) => comment.text)
+              topCommentsForGroup.map((comment: Comment) => comment.text),
+              this.additionalInstructions
             )
           )
           .then((result: string) => {

@@ -124,7 +124,8 @@ Differences of opinion: ${differencesSummary}
     return this.model.generateText(
       getPrompt(
         commonGroundInstructions,
-        commonGroundComments.map((comment: Comment): string => comment.text)
+        commonGroundComments.map((comment: Comment): string => comment.text),
+        this.additionalInstructions
       )
     );
   }
@@ -139,7 +140,8 @@ Differences of opinion: ${differencesSummary}
     return this.model.generateText(
       getPrompt(
         differencesOfOpinionInstructions,
-        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text)
+        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
+        this.additionalInstructions
       )
     );
   }
