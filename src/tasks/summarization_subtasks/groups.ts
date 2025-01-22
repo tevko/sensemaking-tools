@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getPrompt } from "../../sensemaker_utils";
-import { commentCitation } from "../../validation/grounding";
+import { getPrompt, getCommentCitations } from "../../sensemaker_utils";
 import { GroupStats, GroupedSummaryStats } from "../../stats_util";
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { Comment } from "../../types";
@@ -76,7 +75,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
     // Combine the descriptions and add the comments used for summarization as citations.
     return Promise.resolve(groupComparisonSimilar)
       .then((result: string) => {
-        return result + this.getCommentCitations(topAgreeCommentsAcrossGroups);
+        return result + getCommentCitations(topAgreeCommentsAcrossGroups);
       })
       .then(async (similarResult: string) => {
         const differentResult = await Promise.resolve(groupComparisonDifferent);
@@ -84,18 +83,9 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
           similarResult +
           " " +
           differentResult +
-          this.getCommentCitations(topDisagreeCommentsAcrossGroups)
+          getCommentCitations(topDisagreeCommentsAcrossGroups)
         );
       });
-  }
-
-  /**
-   * Create citations for comments in the format of "[12, 43, 56]"
-   * @param comments the comments to use for citations
-   * @returns the formatted citations
-   */
-  private getCommentCitations(comments: Comment[]): string {
-    return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
   }
 
   /**
@@ -121,9 +111,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
             )
           )
           .then((result: string) => {
-            return (
-              `__${groupName}__: ` + result + this.getCommentCitations(topCommentsForGroup) + "\n"
-            );
+            return `__${groupName}__: ` + result + getCommentCitations(topCommentsForGroup) + "\n";
           })
       );
     }

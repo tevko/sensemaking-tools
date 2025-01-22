@@ -16,9 +16,8 @@
 
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { TopicStats, GroupedSummaryStats, GroupStats } from "../../stats_util";
-import { getPrompt } from "../../sensemaker_utils";
+import { getPrompt, getCommentCitations } from "../../sensemaker_utils";
 import { Comment } from "../../types";
-import { commentCitation } from "../../validation/grounding";
 
 const commonGroundInstructions = `Here are several comments sharing different opinions. Your job is to summarize these comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of these comments. Write a concise summary of these comments that is at least one sentence and at most three sentences long. The summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the comments. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 
@@ -117,41 +116,34 @@ Differences of opinion: ${differencesSummary}
 
   /**
    * Summarizes the comments on which there was the strongest agreement between groups.
-   * @returns a two sentence description of similarities and differences.
+   * @returns a short paragraph describing the similarities between groups, including comment citations.
    */
   async getCommonGroundSummary(): Promise<string> {
     const commonGroundComments = this.input.getCommonGroundComments();
-    return this.model.generateText(
+    const summary = this.model.generateText(
       getPrompt(
         commonGroundInstructions,
         commonGroundComments.map((comment: Comment): string => comment.text),
         this.additionalInstructions
       )
     );
+    return summary + getCommentCitations(commonGroundComments);
   }
 
   /**
    * Summarizes the comments on which there was the strongest disagreement between groups.
-   * @returns a two sentence description of similarities and differences.
+   * @returns a short paragraph describing the differences between groups, including comment citations.
    */
   async getDifferencesOfOpinionSummary(groupNames: string[]): Promise<string> {
     const topDisagreeCommentsAcrossGroups =
       this.input.getDifferencesBetweenGroupsComments(groupNames);
-    return this.model.generateText(
+    const summary = this.model.generateText(
       getPrompt(
         differencesOfOpinionInstructions,
         topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
         this.additionalInstructions
       )
     );
-  }
-
-  /**
-   * Create citations for comments in the format of "[12, 43, 56]"
-   * @param comments the comments to use for citations
-   * @returns the formatted citations
-   */
-  private getCommentCitations(comments: Comment[]): string {
-    return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
+    return summary + getCommentCitations(topDisagreeCommentsAcrossGroups);
   }
 }
