@@ -59,7 +59,7 @@ export async function getSummary(
   const sensemaker = new Sensemaker({
     defaultModel: new VertexModel(project, "us-central1"),
   });
-  return await sensemaker.summarize(comments, SummarizationType.VOTE_TALLY, topics);
+  return await sensemaker.summarize(comments, SummarizationType.MULTI_STEP, topics);
 }
 
 export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment[]> {

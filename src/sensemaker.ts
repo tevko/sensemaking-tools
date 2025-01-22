@@ -31,7 +31,7 @@ import { getPrompt, hydrateCommentRecord, retryCall } from "./sensemaker_utils";
 import { Type } from "@sinclair/typebox";
 import { ModelSettings, Model } from "./models/model";
 import { groundSummary, parseStringIntoSummary } from "./validation/grounding";
-import { SummaryStats } from "./stats_util";
+import { GroupedSummaryStats, SummaryStats } from "./stats_util";
 import { summaryContainsStats } from "./validation/stats_checker";
 
 // Class to make sense of conversation data. Uses LLMs to learn what topics were discussed and
@@ -111,7 +111,10 @@ export class Sensemaker {
       }
       comments = await this.categorizeComments(comments, true, topics, additionalInstructions);
     }
-    const summaryStats = new SummaryStats(comments);
+    const summaryStats =
+      summarizationType == SummarizationType.MULTI_STEP
+        ? new GroupedSummaryStats(comments)
+        : new SummaryStats(comments);
     const summary = await retryCall(
       async function (
         model: Model,
