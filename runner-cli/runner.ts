@@ -17,7 +17,13 @@
 import { Command } from "commander";
 import * as fs from "fs";
 import { marked } from "marked";
-import { getCommentsFromCsv, getSummary, getTopicsFromComments } from "./runner_utils";
+import {
+  getCommentsFromCsv,
+  getSummary,
+  getTopicsFromComments,
+  getTopicsAndSubtopics,
+} from "./runner_utils";
+import { type Topic } from "../src/types";
 
 async function main(): Promise<void> {
   // Parse command line arguments.
@@ -30,7 +36,15 @@ async function main(): Promise<void> {
   const options = program.opts();
 
   const comments = await getCommentsFromCsv(options.inputFile);
-  const topics = getTopicsFromComments(comments);
+  // check if any comments have topics before using getTopicsFromComments, otherwise, learn topics using runner_utils function
+  let topics: Topic[];
+  if (comments.length > 0 && comments.some((comment) => comment.topics)) {
+    console.log("Comments already have topics. Skipping topic learning.");
+    topics = getTopicsFromComments(comments);
+  } else {
+    console.log("Learning topics from comments.");
+    topics = await getTopicsAndSubtopics(options.vertexProject, comments);
+  }
 
   const summary = await getSummary(options.vertexProject, comments, topics);
   const markdownContent = summary.getText("MARKDOWN");
