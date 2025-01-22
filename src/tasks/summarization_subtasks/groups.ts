@@ -123,8 +123,6 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
       );
     }
 
-    // TODO: These texts should have citations added. The comments used to generate them should be
-    // used.
     // Join the individual group descriptions whenever they finish, and when that's done wait for
     // the group comparison to be created and combine them all together.
     return resolvePromisesInParallel([
@@ -147,9 +145,10 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
 
     const groupSectionIntro =
       `## Opinion Groups\n\n` +
-      `${groupCount} distinct groups (named here as ${formatStringList(groupNamesWithQuotes)}), ` +
-      `emerged with differing viewpoints on several key issues. The groups are based on people who ` +
-      `voted similarly to each other, and differently from the other group.\n\n`;
+      `${groupCount} distinct groups (named here as ${formatStringList(groupNamesWithQuotes)}) ` +
+      `emerged with differing viewpoints in relation to the submitted comments. The groups are ` +
+      `based on people who vtend to vote more similarly to each other than to those outside the group. ` +
+      "However there are points of common ground where the groups voted similarly.\n\n";
     const groupDescriptions = this.getGroupDescriptions(groupNames);
 
     const descriptionResult = await groupDescriptions;

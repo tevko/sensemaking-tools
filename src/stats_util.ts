@@ -108,6 +108,20 @@ export class SummaryStats {
     return this.comments.length;
   }
 
+  get containsSubtopics(): boolean {
+    for (const comment of this.comments) {
+      if (comment.topics) {
+        for (const topic of comment.topics) {
+          // Check if the topic matches the 'NestedTopic' type
+          if ("subtopics" in topic && Array.isArray(topic.subtopics)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * Returns the top k comments according to the given metric. K defaults to 12.
    */

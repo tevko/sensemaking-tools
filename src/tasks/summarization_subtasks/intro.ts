@@ -25,7 +25,9 @@ export class IntroSummary extends RecursiveSummary<SummaryStats> {
       `This report summarizes the results of public input, encompassing ` +
       `__${commentCountFormatted} comments__` +
       `${this.input.voteCount > 0 ? ` and __${voteCountFormatted} votes__` : ""}. All voters were anonymous. The ` +
-      `public input collected covered a wide range of topics and subtopics, including:\n`;
+      `public input collected covered a wide range of topics ` +
+      `${this.input.containsSubtopics ? "and subtopics " : ""}` +
+      `including:\n`;
 
     for (const topicStats of this.input.getStatsByTopic()) {
       text += ` * __${topicStats.name} (${topicStats.commentCount} comments)__\n`;
