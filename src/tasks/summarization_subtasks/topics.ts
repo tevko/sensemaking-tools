@@ -19,6 +19,7 @@ import { TopicStats, GroupedSummaryStats, GroupStats } from "../../stats_util";
 import { getPrompt, decimalToPercent } from "../../sensemaker_utils";
 import { Comment } from "../../types";
 import { getCommentCitations } from "../utils/citation_utils";
+import { Model } from "../../models/model";
 
 const commonGroundInstructions = `Here are several comments sharing different opinions. Your job is to summarize these comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of these comments. Write a concise summary of these comments that is at least one sentence and at most three sentences long. The summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the comments. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 
@@ -28,6 +29,11 @@ const differencesOfOpinionInstructions = `Here are several comments which genera
 
 const differencesOfOpinionSingleCommentInstructions = `Here is a comment presenting an opinion from a discussion. Your job is to rewrite this comment clearly without embellishment. Do not pretend that you hold this opinion. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. There were very different levels of agreement between the two opinion groups regarding this comment. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Write a complete sentence. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 
+/**
+ * This RecursiveSummary subclass constructs a top level "Topics" summary section,
+ * calling out to the separate TopicSummary and SubtopicSummary classes to generate
+ * content for individual subsections corresponding to specific topics and subtopics.
+ */
 export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
   async getSummary() {
     // First construct the introductory description for the entire section
@@ -44,7 +50,7 @@ export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
 
     // Now construct the individual Topic summaries
     const topicSummaries: Array<Promise<string>> = topicStats.map((topicStat) =>
-      this.getTopicSummary(topicStat)
+      new TopicSummary(topicStat, this.model, this.additionalInstructions).getSummary()
     );
     const topicSummaryText: string = await resolvePromisesInParallel(topicSummaries).then(
       (summaries) => summaries.join("\n")
@@ -59,32 +65,60 @@ ${topicSummaryText}
 `
     );
   }
+}
+
+/**
+ * This RecursiveSummary subclass generates summaries for individual topics.
+ */
+export class TopicSummary extends RecursiveSummary<GroupedSummaryStats> {
+  // TopicSummary also needs to know about the topic, like name and subtopics
+  topicStat: TopicStats;
+
+  // This override is necessary to pass through a TopicStat object, rather than a SummaryStats object
+  constructor(topicStat: TopicStats, model: Model, additionalInstructions?: string) {
+    const commentStats = new GroupedSummaryStats(topicStat.comments);
+    super(commentStats, model, additionalInstructions);
+    this.topicStat = topicStat;
+  }
+
+  async getSummary() {
+    const nSubtopics: number = this.topicStat.subtopicStats?.length || 0;
+    if (nSubtopics == 0) {
+      return this.getCommentSummary();
+    } else {
+      return this.getSubtopicsSummary();
+    }
+  }
 
   /**
-   * Generate a summary for the given topic.
-   * @param subtopicStat A TopicStats value, representing a particular top level topic.
-   * @returns A summary of the given topic.
+   * Returns the section title for this topics summary section of the final report
    */
-  async getTopicSummary(topicStat: TopicStats): Promise<string> {
-    const sectionTitle: string = `${topicStat.name} (${topicStat.commentCount} comments)`;
+  getSectionTitle(): string {
+    return `### ${this.topicStat.name} (${this.topicStat.commentCount} comments)`;
+  }
+
+  /**
+   * When subtopics are present, compiles the individual summaries for those subtopics
+   * @returns a promise of the summary string
+   */
+  async getSubtopicsSummary(): Promise<string> {
     const subtopicSummaries: Array<Promise<string>> =
-      topicStat.subtopicStats?.map((subtopicStat) => this.getSubtopicSummary(subtopicStat)) || [];
-    const nSubtopics: number = topicStat.subtopicStats?.length || 0;
-    const subtopicsSummaryText: string =
-      subtopicSummaries.length > 0
-        ? await resolvePromisesInParallel(subtopicSummaries).then((summaries) =>
-            summaries.join("\n")
-          )
-        : "";
+      this.topicStat.subtopicStats?.map((subtopicStat) =>
+        new SubtopicSummary(subtopicStat, this.model, this.additionalInstructions).getSummary()
+      ) || [];
+    const subtopicsSummaryText: string = await resolvePromisesInParallel(subtopicSummaries).then(
+      (summaries) => summaries.join("\n")
+    );
     // This is just a stub for now, and may eventually be added on to include more naunced descriptions of e.g. where the highest
     // points of common ground and most significant differences of opinion were across the subtopics.
+    const nSubtopics: number = this.topicStat.subtopicStats?.length || 0;
     const topicSummary =
       nSubtopics > 0
         ? `This topic included ${nSubtopics} subtopic${nSubtopics === 1 ? "" : "s"}.`
         : "";
 
     return Promise.resolve(
-      `### ${sectionTitle}
+      `${this.getSectionTitle()}
 
 ${topicSummary}
 
@@ -94,13 +128,10 @@ ${subtopicsSummaryText}
   }
 
   /**
-   * Generate a summary for the given subtopic.
-   * @param subtopicStat A TopicStats value, representing a particular subtopic.
-   * @returns A summary of the given subtopic.
+   * Summarizes the comments associated with the given topic
+   * @returns a promise of the summary string
    */
-  async getSubtopicSummary(subtopicStat: TopicStats): Promise<string> {
-    const sectionTitle: string = `${subtopicStat.name} (${subtopicStat.commentCount} comments)`;
-
+  async getCommentSummary(): Promise<string> {
     const groupStats = this.input.getStatsByGroup();
     const groupNames = groupStats.map((stat: GroupStats) => {
       return stat.name;
@@ -110,7 +141,7 @@ ${subtopicsSummaryText}
     const differencesSummary = await this.getDifferencesOfOpinionSummary(groupNames);
 
     return Promise.resolve(
-      `#### ${sectionTitle}
+      `${this.getSectionTitle()}
 
 Common ground between groups: ${commonGroundSummary}
 
@@ -162,5 +193,15 @@ Differences of opinion: ${differencesSummary}
       );
       return (await summary) + getCommentCitations(topDisagreeCommentsAcrossGroups);
     }
+  }
+}
+
+/**
+ * This TopicSummary subclass contains overrides for subtopics. At present, this is just an
+ * override for the section title, but may evolve to different on other functionality.
+ */
+export class SubtopicSummary extends TopicSummary {
+  override getSectionTitle(): string {
+    return `#### ${this.topicStat.name} (${this.topicStat.commentCount} comments)`;
   }
 }
