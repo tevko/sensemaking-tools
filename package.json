@@ -1,6 +1,6 @@
 {
   "name": "@tevko/sensemaking-tools",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -51,8 +51,5 @@
   "lint-staged": {
     "*.ts": "eslint --cache --fix",
     "*.{js,jsx,ts,tsx}": "prettier --write"
-  },
-  "publishConfig": {
-    "@tevko:registry": "https://npm.pkg.github.com"
   }
 }
