@@ -127,7 +127,7 @@ Differences of opinion: ${differencesSummary}
         this.additionalInstructions
       )
     );
-    return summary + getCommentCitations(commonGroundComments);
+    return (await summary) + getCommentCitations(commonGroundComments);
   }
 
   /**
@@ -144,6 +144,6 @@ Differences of opinion: ${differencesSummary}
         this.additionalInstructions
       )
     );
-    return summary + getCommentCitations(topDisagreeCommentsAcrossGroups);
+    return (await summary) + getCommentCitations(topDisagreeCommentsAcrossGroups);
   }
 }
