@@ -62,12 +62,15 @@ const TEST_COMMENTS = [
 describe("SensemakerUtilsTest", () => {
   it("should create a prompt", () => {
     expect(getPrompt("Summarize this.", ["comment1", "comment2"])).toEqual(
-      `Instructions:
-Summarize this.
+      `
+<instructions>
+  Summarize this.
+</instructions>
 
-Comments:
-comment1
-comment2`
+<data>
+  <comment>comment1</comment>
+  <comment>comment2</comment>
+</data>`
     );
   });
 
@@ -78,17 +81,19 @@ comment2`
         ["comment1", "comment2"],
         "This is for a town hall style conversation"
       )
-    ).toEqual(
-      `Instructions:
-Summarize this.
+    ).toEqual(`
+<instructions>
+  Summarize this.
+</instructions>
 
-Additional context:
-This is for a town hall style conversation
+<additionalContext>
+  This is for a town hall style conversation
+</additionalContext>
 
-Comments:
-comment1
-comment2`
-    );
+<data>
+  <comment>comment1</comment>
+  <comment>comment2</comment>
+</data>`);
   });
   describe("groupCommentsByTopic", () => {
     it("should group comments by topic and subtopic", () => {

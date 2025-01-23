@@ -64,11 +64,14 @@ export async function retryCall<T>(
  * @returns the instructions and the data as a text
  */
 export function getPrompt(instructions: string, data: string[], additionalInstructions?: string) {
-  return `Instructions:
-${instructions}
-${additionalInstructions ? "\nAdditional context:\n" + additionalInstructions + "\n" : ""}
-Comments:
-${data.join("\n")}`; // separate comments with newlines
+  return `
+<instructions>
+  ${instructions}
+</instructions>
+${additionalInstructions ? "\n<additionalContext>\n  " + additionalInstructions + "\n</additionalContext>\n" : ""}
+<data>
+  <comment>${data.join("</comment>\n  <comment>")}</comment>
+</data>`;
 }
 
 /**
