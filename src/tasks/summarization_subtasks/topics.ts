@@ -16,8 +16,9 @@
 
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { TopicStats, GroupedSummaryStats, GroupStats } from "../../stats_util";
-import { getPrompt, getCommentCitations, decimalToPercent } from "../../sensemaker_utils";
+import { getPrompt, decimalToPercent } from "../../sensemaker_utils";
 import { Comment } from "../../types";
+import { getCommentCitations } from "../utils/citation_utils";
 
 const commonGroundInstructions = `Here are several comments sharing different opinions. Your job is to summarize these comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of these comments. Write a concise summary of these comments that is at least one sentence and at most three sentences long. The summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the comments. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 

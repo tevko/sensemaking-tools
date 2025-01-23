@@ -16,7 +16,6 @@
 
 import { CommentRecord, Comment } from "./types";
 import { RETRY_DELAY_MS } from "./models/vertex_model";
-import { commentCitation } from "./validation/grounding";
 
 /**
  * Rerun a function multiple times.
@@ -159,15 +158,6 @@ export function groupCommentsBySubtopic(categorized: Comment[]): {
     }
   }
   return groupedComments;
-}
-
-/**
- * Create citations for comments in the format of "[12, 43, 56]"
- * @param comments the comments to use for citations
- * @returns the formatted citations as a string
- */
-export function getCommentCitations(comments: Comment[]): string {
-  return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
 }
 
 /**

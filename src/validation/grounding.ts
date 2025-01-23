@@ -16,6 +16,7 @@
 
 import { Comment, Summary, SummaryChunk } from "../types";
 import { Model } from "../models/model";
+import { commentCitation } from "../tasks/utils/citation_utils";
 import { retryGenerateSummary } from "../tasks/summarization";
 
 function formatComments(comments: Comment[]): string {
@@ -184,39 +185,6 @@ Do not crop the response; you must include all sections of the summary.
 Here is the summary for editing:
 
 ${summary}`;
-}
-
-/**
- * Utility function for displaying a concise textual summary of the vote tally patterns for a given comment
- * @param comment
- * @returns the summary as a string
- */
-export function voteTallySummary(comment: Comment): string {
-  // Map k,v pairs from comment vote tallies to string representations, and combine into a single string.
-  if (comment.voteTalliesByGroup) {
-    return Object.entries(comment.voteTalliesByGroup as object).reduce((acc, [key, value]) => {
-      return (
-        acc +
-        ` group-${key}(Agree=${value.agreeCount}, Disagree=${value.disagreeCount}, Pass=${value.passCount})`
-      );
-    }, "Votes:");
-  } else {
-    return "";
-  }
-}
-
-/**
- * Utility function for displaying a concise textual summary of a comment as text plus the vote tally patterns (via voteTallySummary)
- * @param comment
- * @returns the summary as a string
- */
-export function commentCitation(comment: Comment): string {
-  const base = `[${comment.id}](## "${comment.text.replace(/"/g, '\\"').replace(/\n/g, " ")}`;
-  if (comment.voteTalliesByGroup) {
-    return base + `\n${voteTallySummary(comment)}")`;
-  } else {
-    return base + `")`;
-  }
 }
 
 /**

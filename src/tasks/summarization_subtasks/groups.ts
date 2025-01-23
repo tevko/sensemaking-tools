@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getPrompt, getCommentCitations } from "../../sensemaker_utils";
+import { getPrompt } from "../../sensemaker_utils";
 import { GroupStats, GroupedSummaryStats } from "../../stats_util";
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { Comment } from "../../types";
+import { getCommentCitations } from "../utils/citation_utils";
 
 /**
  * Format a list of strings to be a human readable list ending with "and"
