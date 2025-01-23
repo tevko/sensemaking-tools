@@ -195,7 +195,7 @@ export class SummaryStats {
 
 export class GroupedSummaryStats extends SummaryStats {
   filteredComments: CommentWithVoteTallies[];
-  private minVoteCount = 20;
+  public minVoteCount = 20;
 
   constructor(comments: Comment[]) {
     super(comments);

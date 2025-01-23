@@ -16,12 +16,16 @@
 
 import { RecursiveSummary, resolvePromisesInParallel } from "./recursive_summarization";
 import { TopicStats, GroupedSummaryStats, GroupStats } from "../../stats_util";
-import { getPrompt, getCommentCitations } from "../../sensemaker_utils";
+import { getPrompt, getCommentCitations, decimalToPercent } from "../../sensemaker_utils";
 import { Comment } from "../../types";
 
 const commonGroundInstructions = `Here are several comments sharing different opinions. Your job is to summarize these comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of these comments. Write a concise summary of these comments that is at least one sentence and at most three sentences long. The summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the comments. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 
+const commonGroundSingleCommentInstructions = `Here is a comment presenting an opinion from a discussion. Your job is to rewrite this comment clearly without embellishment. Do not pretend that you hold this opinion. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. These opinion groups mostly approve of this comment. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Write a complete sentence. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
+
 const differencesOfOpinionInstructions = `Here are several comments which generated disagreement. Your job is summarize the ideas contained in the comments. Do not pretend that you hold any of these opinions. You are not a participant in this discussion. Write a concise summary of these comments that is at least one sentence and at most three sentences long. Refer to the people who made these comments as participants, not commenters.  Do not talk about how strongly they disagree on these comments. Use complete sentences. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. The summary should not imply that these views were agreed on by all participants. Your output should begin in the form "There was low consensus". Do not pretend that these comments were written by different people.  For each sentence use a unique phrase to indicate that there was low consensus on the topic, and do not present each comment as an alternative idea. Do not yap.`;
+
+const differencesOfOpinionSingleCommentInstructions = `Here is a comment presenting an opinion from a discussion. Your job is to rewrite this comment clearly without embellishment. Do not pretend that you hold this opinion. You are not a participant in this discussion. Participants in this conversation have been clustered into opinion groups. There were very different levels of agreement between the two opinion groups regarding this comment. Refer to the people who made these comments as participants, not commenters. Do not talk about how strongly they approve of these comments. Write a complete sentence. Do not use the passive voice. Do not use ambiguous pronouns. Be clear. Do not generate bullet points or special formatting. Do not yap.`;
 
 export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
   async getSummary() {
@@ -120,14 +124,19 @@ Differences of opinion: ${differencesSummary}
    */
   async getCommonGroundSummary(): Promise<string> {
     const commonGroundComments = this.input.getCommonGroundComments();
-    const summary = this.model.generateText(
-      getPrompt(
-        commonGroundInstructions,
-        commonGroundComments.map((comment: Comment): string => comment.text),
-        this.additionalInstructions
-      )
-    );
-    return (await summary) + getCommentCitations(commonGroundComments);
+    const nComments = commonGroundComments.length;
+    if (nComments === 0) {
+      return `No comments met the thresholds necessary to be considered as a point of common ground (at least ${this.input.minVoteCount} votes, and more than ${decimalToPercent(this.input.minAgreeProbCommonGround)} agreement between groups).`;
+    } else {
+      const summary = this.model.generateText(
+        getPrompt(
+          nComments === 1 ? commonGroundSingleCommentInstructions : commonGroundInstructions,
+          commonGroundComments.map((comment: Comment): string => comment.text),
+          this.additionalInstructions
+        )
+      );
+      return (await summary) + getCommentCitations(commonGroundComments);
+    }
   }
 
   /**
@@ -137,13 +146,20 @@ Differences of opinion: ${differencesSummary}
   async getDifferencesOfOpinionSummary(groupNames: string[]): Promise<string> {
     const topDisagreeCommentsAcrossGroups =
       this.input.getDifferencesBetweenGroupsComments(groupNames);
-    const summary = this.model.generateText(
-      getPrompt(
-        differencesOfOpinionInstructions,
-        topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
-        this.additionalInstructions
-      )
-    );
-    return (await summary) + getCommentCitations(topDisagreeCommentsAcrossGroups);
+    const nComments = topDisagreeCommentsAcrossGroups.length;
+    if (nComments === 0) {
+      return `No comments met the thresholds necessary to be considered as a point of common ground (at least ${this.input.minVoteCount} votes, and more than ${decimalToPercent(this.input.minAgreeProbDifference)} difference in agreement rate between groups).`;
+    } else {
+      const summary = this.model.generateText(
+        getPrompt(
+          nComments === 1
+            ? differencesOfOpinionSingleCommentInstructions
+            : differencesOfOpinionInstructions,
+          topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
+          this.additionalInstructions
+        )
+      );
+      return (await summary) + getCommentCitations(topDisagreeCommentsAcrossGroups);
+    }
   }
 }

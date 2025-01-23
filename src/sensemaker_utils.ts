@@ -169,3 +169,15 @@ export function groupCommentsBySubtopic(categorized: Comment[]): {
 export function getCommentCitations(comments: Comment[]): string {
   return "[" + comments.map((comment) => commentCitation(comment)).join(", ") + "]";
 }
+
+/**
+ * Format a decimal number as a percent string with the given precision
+ * @param decimal The decimal number to convert
+ * @param precision The precision
+ * @returns A string representing the equivalent percentage
+ */
+export function decimalToPercent(decimal: number, precision: number = 0): string {
+  const percentage = decimal * 100;
+  const roundedPercentage = Math.round(percentage * 10 ** precision) / 10 ** precision;
+  return `${roundedPercentage}%`;
+}

@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { getPrompt, groupCommentsBySubtopic, formatCommentsWithVotes } from "./sensemaker_utils";
+import {
+  getPrompt,
+  groupCommentsBySubtopic,
+  formatCommentsWithVotes,
+  decimalToPercent,
+} from "./sensemaker_utils";
 import { Comment } from "./types";
 
 const TEST_COMMENTS = [
@@ -146,5 +151,11 @@ comment2`
       `comment2
       vote info per group: {"0":{"agreeCount":2,"disagreeCount":5,"passCount":3,"totalCount":10},"1":{"agreeCount":5,"disagreeCount":3,"passCount":2,"totalCount":10}}`,
     ]);
+  });
+
+  describe("decimalToPercent", () => {
+    it("should convert decimal to percent", () => expect(decimalToPercent(0.5)).toEqual("50%"));
+    it("should convert decimal to percent with precision", () =>
+      expect(decimalToPercent(0.55555, 2)).toEqual("55.56%"));
   });
 });
