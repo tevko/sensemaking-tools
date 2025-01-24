@@ -21,7 +21,13 @@
 
 import { Command } from "commander";
 import { createObjectCsvWriter } from "csv-writer";
-import { getCommentsFromCsv, getSummary } from "./runner_utils";
+import {
+  getCommentsFromCsv,
+  getSummary,
+  getTopicsFromComments,
+  getTopicsAndSubtopics,
+} from "./runner_utils";
+import { type Topic } from "../src/types";
 
 interface outputCsvFormat {
   run: number;
@@ -45,6 +51,15 @@ async function main(): Promise<void> {
   const options = program.opts();
 
   const comments = await getCommentsFromCsv(options.inputFile);
+  // check if any comments have topics before using getTopicsFromComments, otherwise, learn topics using runner_utils function
+  let topics: Topic[];
+  if (comments.length > 0 && comments.some((comment) => comment.topics)) {
+    console.log("Comments already have topics. Skipping topic learning.");
+    topics = getTopicsFromComments(comments);
+  } else {
+    console.log("Learning topics from comments.");
+    topics = await getTopicsAndSubtopics(options.vertexProject, comments);
+  }
 
   let outputTexts: outputCsvFormat[] = [];
   const csvWriter = createObjectCsvWriter({
@@ -56,12 +71,13 @@ async function main(): Promise<void> {
     const summary = await getSummary(
       options.vertexProject,
       comments,
+      topics,
       options.additionalInstructions
     );
     outputTexts = outputTexts.concat([
       {
         run: i,
-        summaryType: "VoteTally",
+        summaryType: "Multi Step",
         text: summary.getText("MARKDOWN"),
       },
     ]);

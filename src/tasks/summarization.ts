@@ -171,12 +171,25 @@ export class MultiStepSummary {
   }
 
   async getSummary() {
-    const introSummary = await new IntroSummary(this.summaryStats, this.model).getSummary();
-    const groupsSummary = await new GroupsSummary(this.summaryStats, this.model).getSummary();
-    const topicsSummary = await new TopicsSummary(this.summaryStats, this.model).getSummary();
+    const introSummary = await new IntroSummary(
+      this.summaryStats,
+      this.model,
+      this.additionalInstructions
+    ).getSummary();
+    const groupsSummary = await new GroupsSummary(
+      this.summaryStats,
+      this.model,
+      this.additionalInstructions
+    ).getSummary();
+    const topicsSummary = await new TopicsSummary(
+      this.summaryStats,
+      this.model,
+      this.additionalInstructions
+    ).getSummary();
     const conclusionSummary = await new ConclusionSummary(
       this.summaryStats,
-      this.model
+      this.model,
+      this.additionalInstructions
     ).getSummary();
     // return a concatenation of the separate sections, with two newlines separating each section
     return (
