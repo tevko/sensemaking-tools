@@ -54,6 +54,14 @@ export function commentCitation(comment: Comment): string {
 }
 
 /**
+ * Display a summary of a comment (text and votes) as a citation in HTML.
+ * @param comment the comment to summarize
+ * @returns the html element with the comment id and more info on hover over.
+ */
+export function commentCitationHtml(comment: Comment): string {
+  return "<a href='##' title='" + commentCitationHoverOver(comment) + "'>" + comment.id + `</a>`;
+}
+/**
  * Utility function for displaying a concise textual summary of the vote tally patterns for a given comment
  * @param comment
  * @returns the summary as a string
