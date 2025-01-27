@@ -50,7 +50,7 @@ export class TopicsSummary extends RecursiveSummary<GroupedSummaryStats> {
 
     // Now construct the individual Topic summaries
     const topicSummaries: Array<Promise<string>> = topicStats.map((topicStat) =>
-      new TopicSummary(topicStat, this.model, this.additionalInstructions).getSummary()
+      new TopicSummary(topicStat, this.model, this.additionalContext).getSummary()
     );
     const topicSummaryText: string = await resolvePromisesInParallel(topicSummaries).then(
       (summaries) => summaries.join("\n")
@@ -75,9 +75,9 @@ export class TopicSummary extends RecursiveSummary<GroupedSummaryStats> {
   topicStat: TopicStats;
 
   // This override is necessary to pass through a TopicStat object, rather than a SummaryStats object
-  constructor(topicStat: TopicStats, model: Model, additionalInstructions?: string) {
+  constructor(topicStat: TopicStats, model: Model, additionalContext?: string) {
     const commentStats = new GroupedSummaryStats(topicStat.comments);
-    super(commentStats, model, additionalInstructions);
+    super(commentStats, model, additionalContext);
     this.topicStat = topicStat;
   }
 
@@ -104,7 +104,7 @@ export class TopicSummary extends RecursiveSummary<GroupedSummaryStats> {
   async getSubtopicsSummary(): Promise<string> {
     const subtopicSummaries: Array<Promise<string>> =
       this.topicStat.subtopicStats?.map((subtopicStat) =>
-        new SubtopicSummary(subtopicStat, this.model, this.additionalInstructions).getSummary()
+        new SubtopicSummary(subtopicStat, this.model, this.additionalContext).getSummary()
       ) || [];
     const subtopicsSummaryText: string = await resolvePromisesInParallel(subtopicSummaries).then(
       (summaries) => summaries.join("\n")
@@ -164,7 +164,7 @@ Differences of opinion: ${differencesSummary}
         getPrompt(
           nComments === 1 ? commonGroundSingleCommentInstructions : commonGroundInstructions,
           commonGroundComments.map((comment: Comment): string => comment.text),
-          this.additionalInstructions
+          this.additionalContext
         )
       );
       return (await summary) + getCommentCitations(commonGroundComments);
@@ -188,7 +188,7 @@ Differences of opinion: ${differencesSummary}
             ? differencesOfOpinionSingleCommentInstructions
             : differencesOfOpinionInstructions,
           topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
-          this.additionalInstructions
+          this.additionalContext
         )
       );
       return (await summary) + getCommentCitations(topDisagreeCommentsAcrossGroups);

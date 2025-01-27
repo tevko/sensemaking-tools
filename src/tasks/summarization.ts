@@ -126,7 +126,7 @@ Within the high/low consensus summary list out the specific issues and make them
  * @param model The language model to use for summarization.
  * @param comments An array of `Comment` objects containing the comments to summarize.
  * @param summarizationType The type of summarization to perform (e.g., BASIC, VOTE_TALLY).
- * @param additionalInstructions Optional additional instructions to guide the summarization process. These instructions will be included verbatim in the prompt sent to the LLM.
+ * @param additionalContext Optional additional instructions to guide the summarization process. These instructions will be included verbatim in the prompt sent to the LLM.
  * @returns A Promise that resolves to the generated summary string.
  * @throws {TypeError} If an unknown `summarizationType` is provided.
  */
@@ -134,21 +134,17 @@ export async function summarizeByType(
   model: Model,
   summaryStats: SummaryStats,
   summarizationType: SummarizationType,
-  additionalInstructions?: string
+  additionalContext?: string
 ): Promise<string> {
   if (summarizationType === SummarizationType.BASIC) {
-    return await basicSummarize(summaryStats, model, additionalInstructions);
+    return await basicSummarize(summaryStats, model, additionalContext);
   } else if (summarizationType === SummarizationType.VOTE_TALLY) {
-    return await voteTallySummarize(
-      summaryStats as GroupedSummaryStats,
-      model,
-      additionalInstructions
-    );
+    return await voteTallySummarize(summaryStats as GroupedSummaryStats, model, additionalContext);
   } else if (summarizationType === SummarizationType.MULTI_STEP) {
     return await new MultiStepSummary(
       summaryStats as GroupedSummaryStats,
       model,
-      additionalInstructions
+      additionalContext
     ).getSummary();
   } else {
     throw new TypeError("Unknown Summarization Type.");
@@ -162,34 +158,34 @@ export class MultiStepSummary {
   private summaryStats: GroupedSummaryStats;
   private model: Model;
   // TODO: Figure out how we handle additional instructions with this structure.
-  private additionalInstructions?: string;
+  private additionalContext?: string;
 
-  constructor(summaryStats: GroupedSummaryStats, model: Model, additionalInstructions?: string) {
+  constructor(summaryStats: GroupedSummaryStats, model: Model, additionalContext?: string) {
     this.summaryStats = summaryStats;
     this.model = model;
-    this.additionalInstructions = additionalInstructions;
+    this.additionalContext = additionalContext;
   }
 
   async getSummary() {
     const introSummary = await new IntroSummary(
       this.summaryStats,
       this.model,
-      this.additionalInstructions
+      this.additionalContext
     ).getSummary();
     const groupsSummary = await new GroupsSummary(
       this.summaryStats,
       this.model,
-      this.additionalInstructions
+      this.additionalContext
     ).getSummary();
     const topicsSummary = await new TopicsSummary(
       this.summaryStats,
       this.model,
-      this.additionalInstructions
+      this.additionalContext
     ).getSummary();
     const conclusionSummary = await new ConclusionSummary(
       this.summaryStats,
       this.model,
-      this.additionalInstructions
+      this.additionalContext
     ).getSummary();
     // return a concatenation of the separate sections, with two newlines separating each section
     return (
@@ -202,18 +198,18 @@ export class MultiStepSummary {
  * Summarizes the comments using a LLM on Vertex.
  * @param instructions: how the comments should be summarized.
  * @param comments: the data to summarize
- * @param additionalInstructions: additional context to include in the prompt.
+ * @param additionalContext: additional context to include in the prompt.
  * @returns: the LLM's summarization.
  */
 export async function basicSummarize(
   summaryStats: SummaryStats,
   model: Model,
-  additionalInstructions?: string
+  additionalContext?: string
 ): Promise<string> {
   const prompt = getPrompt(
     getSummarizationInstructions(false, summaryStats),
     summaryStats.comments.map((c) => c.text),
-    additionalInstructions
+    additionalContext
   );
 
   return retryGenerateSummary(model, prompt);
@@ -223,18 +219,18 @@ export async function basicSummarize(
  * Summarizes the comments using a LLM on Vertex.
  * @param instructions: how the comments should be summarized.
  * @param commentData: the data to summarize, as an array of Comment objects
- * @param additionalInstructions: additional context to include in the prompt.
+ * @param additionalContext: additional context to include in the prompt.
  * @returns: the LLM's summarization.
  */
 export async function voteTallySummarize(
   summaryStats: SummaryStats,
   model: Model,
-  additionalInstructions?: string
+  additionalContext?: string
 ): Promise<string> {
   const prompt = getPrompt(
     getSummarizationInstructions(true, summaryStats),
     formatCommentsWithVotes(summaryStats.comments),
-    additionalInstructions
+    additionalContext
   );
 
   return retryGenerateSummary(model, prompt);

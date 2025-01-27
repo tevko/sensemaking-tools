@@ -60,15 +60,15 @@ export async function retryCall<T>(
  * Combines the data and instructions into a prompt to send to Vertex.
  * @param instructions: what the model should do.
  * @param data: the data that the model should consider.
- * @param additionalInstructions additional context to include in the prompt.
+ * @param additionalContext additional context to include in the prompt.
  * @returns the instructions and the data as a text
  */
-export function getPrompt(instructions: string, data: string[], additionalInstructions?: string) {
+export function getPrompt(instructions: string, data: string[], additionalContext?: string) {
   return `
 <instructions>
   ${instructions}
 </instructions>
-${additionalInstructions ? "\n<additionalContext>\n  " + additionalInstructions + "\n</additionalContext>\n" : ""}
+${additionalContext ? "\n<additionalContext>\n  " + additionalContext + "\n</additionalContext>\n" : ""}
 <data>
   <comment>${data.join("</comment>\n  <comment>")}</comment>
 </data>`;

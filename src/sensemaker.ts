@@ -86,8 +86,9 @@ export class Sensemaker {
    * @param topics  An optional array of `Topic` objects. If provided, these topics will be used for
    *  comment categorization before summarization, ensuring that the summary addresses the specified
    *  topics. If `comments` are already categorized, this parameter is ignored.
-   * @param additionalInstructions Optional additional instructions to provide to the LLM for
-   *  summarization. These instructions will be appended verbatim to the summarization prompt.
+   * @param additionalContext Optional additional context to provide to the LLM for
+   *  summarization. The context will be appended verbatim to the summarization prompt. This
+   * should be 1-2 sentences on what the conversation is about and where it takes place.
    * @returns A Promise that resolves to a `Summary` object, containing the generated summary text
    *  and metadata.
    */
@@ -95,7 +96,7 @@ export class Sensemaker {
     comments: Comment[],
     summarizationType: SummarizationType = SummarizationType.VOTE_TALLY,
     topics?: Topic[],
-    additionalInstructions?: string
+    additionalContext?: string
   ): Promise<Summary> {
     const startTime = performance.now();
 
@@ -106,10 +107,10 @@ export class Sensemaker {
           comments,
           true, // including subtopics (as they are important for summaries)
           undefined, // no top level topics specified
-          additionalInstructions // TODO: decide if we want to pass them here as well
+          additionalContext
         );
       }
-      comments = await this.categorizeComments(comments, true, topics, additionalInstructions);
+      comments = await this.categorizeComments(comments, true, topics, additionalContext);
     }
     const summaryStats =
       summarizationType == SummarizationType.MULTI_STEP
@@ -121,7 +122,7 @@ export class Sensemaker {
         summaryStats: SummaryStats,
         summarizationType: SummarizationType
       ): Promise<string> {
-        return summarizeByType(model, summaryStats, summarizationType, additionalInstructions);
+        return summarizeByType(model, summaryStats, summarizationType, additionalContext);
       },
       function (
         summary: string,
@@ -152,7 +153,9 @@ export class Sensemaker {
    * @param includeSubtopics Whether to include subtopics in the topic modeling
    * @param topics Optional. The user provided top-level topics, if these are specified only
    * subtopics will be learned.
-   * @param additionalInstructions Optional. Context to add to the LLM prompt.
+   * @param additionalContext Optional additional context to provide to the LLM for
+   *  topic learning. The context will be appended verbatim to the prompt. This
+   * should be 1-2 sentences on what the conversation is about and where it takes place.
    * @returns: Topics (optionally containing subtopics) representing what is discussed in the
    * comments.
    */
@@ -160,7 +163,7 @@ export class Sensemaker {
     comments: Comment[],
     includeSubtopics: boolean,
     topics?: Topic[],
-    additionalInstructions?: string
+    additionalContext?: string
   ): Promise<Topic[]> {
     const startTime = performance.now();
 
@@ -174,7 +177,7 @@ export class Sensemaker {
     return retryCall(
       async function (model: Model): Promise<Topic[]> {
         return (await model.generateData(
-          getPrompt(instructions, commentTexts, additionalInstructions),
+          getPrompt(instructions, commentTexts, additionalContext),
           schema
         )) as Topic[];
       },
@@ -197,24 +200,21 @@ export class Sensemaker {
    * @param comments The data to summarize
    * @param includeSubtopics Whether to include subtopics in the categorization.
    * @param topics The user provided topics (and optionally subtopics).
-   * @param additionalInstructions Optional. Context to add to the LLM prompt.
+   * @param additionalContext Optional additional context to provide to the LLM for
+   * categorization. The context will be appended verbatim to the prompt. This
+   * should be 1-2 sentences on what the conversation is about and where it takes place.
    * @returns: The LLM's categorization.
    */
   public async categorizeComments(
     comments: Comment[],
     includeSubtopics: boolean,
     topics?: Topic[],
-    additionalInstructions?: string
+    additionalContext?: string
   ): Promise<Comment[]> {
     const startTime = performance.now();
 
     if (!topics) {
-      topics = await this.learnTopics(
-        comments,
-        includeSubtopics,
-        undefined,
-        additionalInstructions
-      );
+      topics = await this.learnTopics(comments, includeSubtopics, undefined, additionalContext);
     }
 
     const instructions = generateCategorizationPrompt(topics, includeSubtopics);
@@ -236,7 +236,7 @@ export class Sensemaker {
         uncategorizedBatch,
         includeSubtopics,
         topics,
-        additionalInstructions
+        additionalContext
       );
       categorized.push(...categorizedBatch);
     }

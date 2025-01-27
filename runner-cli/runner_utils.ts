@@ -68,7 +68,7 @@ export async function getSummary(
   project: string,
   comments: Comment[],
   topics?: Topic[],
-  additionalInstructions?: string
+  additionalContext?: string
 ): Promise<Summary> {
   const sensemaker = new Sensemaker({
     defaultModel: new VertexModel(project, "us-central1"),
@@ -77,7 +77,7 @@ export async function getSummary(
     comments,
     SummarizationType.MULTI_STEP,
     topics,
-    additionalInstructions
+    additionalContext
   );
 }
 

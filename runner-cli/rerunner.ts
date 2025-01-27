@@ -42,7 +42,7 @@ async function main(): Promise<void> {
     .option("-o, --outputFile <file>", "The output file name.")
     .option("-i, --inputFile <file>", "The input file name.")
     .option(
-      "-a, --additionalInstructions <instructions>",
+      "-a, --additionalContext <context>",
       "A short description of the conversation to add context."
     )
     .option("-r, --rerunCount <count>", "The number of times to rerun.")
@@ -72,7 +72,7 @@ async function main(): Promise<void> {
       options.vertexProject,
       comments,
       topics,
-      options.additionalInstructions
+      options.additionalContext
     );
     outputTexts = outputTexts.concat([
       {

@@ -36,7 +36,7 @@ import { TSchema, Type } from "@sinclair/typebox";
  * @param inputComments The comments to categorize.
  * @param includeSubtopics Whether to include subtopics in the categorization.
  * @param topics The topics and subtopics provided to the LLM for categorization.
- * @param additionalInstructions - extra context to be included to the LLM prompt
+ * @param additionalContext - extra context to be included to the LLM prompt
  * @returns The categorized comments.
  */
 export async function categorizeWithRetry(
@@ -45,7 +45,7 @@ export async function categorizeWithRetry(
   inputComments: Comment[],
   includeSubtopics: boolean,
   topics: Topic[],
-  additionalInstructions?: string
+  additionalContext?: string
 ): Promise<CommentRecord[]> {
   // a holder for uncategorized comments: first - input comments, later - any failed ones that need to be retried
   let uncategorized: Comment[] = [...inputComments];
@@ -60,7 +60,7 @@ export async function categorizeWithRetry(
       includeSubtopics ? SubtopicCategorizedComment : TopicCategorizedComment
     );
     const newCategorized: CommentRecord[] = (await model.generateData(
-      getPrompt(instructions, uncategorizedCommentsForModel, additionalInstructions),
+      getPrompt(instructions, uncategorizedCommentsForModel, additionalContext),
       outputSchema
     )) as CommentRecord[];
 

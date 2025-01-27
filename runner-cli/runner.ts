@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     .option("-o, --outputFile <file>", "The output file name.")
     .option("-i, --inputFile <file>", "The input file name.")
     .option(
-      "-a, --additionalInstructions <instructions>",
+      "-a, --additionalContext <context>",
       "A short description of the conversation to add context."
     )
     .option("-v, --vertexProject <project>", "The Vertex Project name.");
@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     options.vertexProject,
     comments,
     topics,
-    options.additionalInstructions
+    options.additionalContext
   );
   const markdownContent = summary.getText("MARKDOWN");
   const htmlContent = `

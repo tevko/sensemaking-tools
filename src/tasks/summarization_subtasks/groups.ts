@@ -57,7 +57,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
           "groups that had high inter group agreement on this subset of comments. Frame it in " +
           "terms of what the groups largely agree on.",
         topAgreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
-        this.additionalInstructions
+        this.additionalContext
       )
     );
 
@@ -69,7 +69,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
           "what groups had different opinions on. Frame it in terms of what differs between the " +
           "groups. Do not suggest the groups agree on these issues. Include every comment in the summary.",
         topDisagreeCommentsAcrossGroups.map((comment: Comment) => comment.text),
-        this.additionalInstructions
+        this.additionalContext
       )
     );
 
@@ -108,7 +108,7 @@ export class GroupsSummary extends RecursiveSummary<GroupedSummaryStats> {
                 `"liberal", or "progressive"). Instead, describe the group based on their ` +
                 `demonstrated preferences within the conversation.`,
               topCommentsForGroup.map((comment: Comment) => comment.text),
-              this.additionalInstructions
+              this.additionalContext
             )
           )
           .then((result: string) => {
