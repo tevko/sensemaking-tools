@@ -20,13 +20,13 @@ In addition to models available through VertexAI’s Model Garden, users can int
 
 ### Costs of Running
 
-LLM pricing is based on token count and constantly changing. Here we list the token counts for a conversation with ~1000 comments. Please see [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for an up-to-date cost per input token. As of December 4, 2024 the cost for running topic learning, categorization, and summarization was in total under $5 on Gemini 1.5 Pro.
+LLM pricing is based on token count and constantly changing. Here we list the token counts for a conversation with ~1000 comments. Please see [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for an up-to-date cost per input token. As of January 23, 2025 the cost for running topic learning, categorization, and summarization was in total under $1 on Gemini 1.5 Pro.
 
 **Token Counts for a 1000 Comment Conversation**
 | | Topic Learning | Categorization | Summarization |
 | -------- | ------- | ------- | ------- |
-| Input Tokens | 41,000 | 41,000 | 143,000 |
-| Output Tokens | 1,000 | 26,000 | 25,000 |
+| Input Tokens | 41,000 | 41,000 | 19,000 |
+| Output Tokens | 1,000 | 26,000 | 5,000 |
 
 ## Running the tools - Setup
 
