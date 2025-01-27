@@ -158,7 +158,7 @@ Differences of opinion: ${differencesSummary}
     const commonGroundComments = this.input.getCommonGroundComments();
     const nComments = commonGroundComments.length;
     if (nComments === 0) {
-      return `No comments met the thresholds necessary to be considered as a point of common ground (at least ${this.input.minVoteCount} votes, and more than ${decimalToPercent(this.input.minAgreeProbCommonGround)} agreement between groups).`;
+      return `No comments met the thresholds necessary to be considered as a point of common ground (at least ${this.input.minVoteCount} votes, and at least ${decimalToPercent(this.input.minAgreeProbCommonGround)} agreement across groups).`;
     } else {
       const summary = this.model.generateText(
         getPrompt(
@@ -180,7 +180,7 @@ Differences of opinion: ${differencesSummary}
       this.input.getDifferencesBetweenGroupsComments(groupNames);
     const nComments = topDisagreeCommentsAcrossGroups.length;
     if (nComments === 0) {
-      return `No comments met the thresholds necessary to be considered as a point of common ground (at least ${this.input.minVoteCount} votes, and more than ${decimalToPercent(this.input.minAgreeProbDifference)} difference in agreement rate between groups).`;
+      return `No comments met the thresholds necessary to be considered as a significant difference of opinion (at least ${this.input.minVoteCount} votes, and more than ${decimalToPercent(this.input.minAgreeProbDifference)} difference in agreement rate between groups).`;
     } else {
       const summary = this.model.generateText(
         getPrompt(
