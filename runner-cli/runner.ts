@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Run the summarizer based on a CSV input and output the result as an hmtl page.
+// Run the summarizer based on CSV data as output from the processing scripts in the `bin`
+// directory, and as documented in `runner_utils.ts`.
 
 import { Command } from "commander";
 import * as fs from "fs";

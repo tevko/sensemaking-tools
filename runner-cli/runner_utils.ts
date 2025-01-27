@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This code processes data from the `bin/` directory ingest scripts. In general, the shape
+// takes the form of the `CoreCommentCsvRow` structure below, together with the vote tally
+// columns as specified by `VoteTallyGroupKey`
+
 import { Sensemaker } from "../src/sensemaker";
 import { VertexModel } from "../src/models/vertex_model";
 import { Summary, VoteTally, Comment, SummarizationType, Topic } from "../src/types";
@@ -19,8 +23,10 @@ import * as path from "path";
 import * as fs from "fs";
 import { parse } from "csv-parse";
 
-// TODO: remove this and make it more general
-type VoteTallyCsvRow = {
+/**
+ * Core comment columns, sans any vote tally rows
+ */
+type CoreCommentCsvRow = {
   index: number;
   timestamp: number;
   datetime: string;
@@ -31,15 +37,22 @@ type VoteTallyCsvRow = {
   moderated: number;
   comment_text: string;
   passes: number;
-  "group-0-disagree-count": number;
-  "group-0-pass-count": number;
-  "group-0-agree-count": number;
-  "group-1-disagree-count": number;
-  "group-1-pass-count": number;
-  "group-1-agree-count": number;
   topic: string;
   subtopic: string;
 };
+
+// Make this interface require that key names look like `group-N-VOTE-count`
+type VoteTallyGroupKey =
+  | `group-${number}-agree-count`
+  | `group-${number}-disagree-count`
+  | `group-${number}-pass-count`;
+
+export interface VoteTallyCsvRow {
+  [key: VoteTallyGroupKey]: number;
+}
+
+//This is a type that combines VoteTallyCsvRow and CoreCommentCsvRow
+export type CommentCsvRow = VoteTallyCsvRow & CoreCommentCsvRow;
 
 export async function getTopicsAndSubtopics(
   project: string,
@@ -68,7 +81,18 @@ export async function getSummary(
   );
 }
 
+/**
+ * Gets comments from a CSV file, in the style of the output from the input processing files
+ * in the project's `bin/` directory. Core CSV rows are as for `CoreCommentCsvRow`, plus any
+ * vote tallies in `VoteTallyCsvRow`.
+ * @param inputFilePath
+ * @returns
+ */
 export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment[]> {
+  // Determine the number of groups from the header row
+  const header = fs.readFileSync(inputFilePath, { encoding: "utf-8" }).split("\n")[0];
+  const numGroups = new Set(header.match(/group-\d/g) || []).size;
+
   if (!inputFilePath) {
     throw new Error("Input file path is missing!");
   }
@@ -84,36 +108,36 @@ export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment
     const data: Comment[] = [];
     fs.createReadStream(filePath)
       .pipe(parser)
-      .on("error", (error) => reject(error))
-      .on("data", (row: VoteTallyCsvRow) => {
+      .on("error", reject)
+      .on("data", (row: CommentCsvRow) => {
         if (row.moderated == -1) {
           return;
         }
         const newComment: Comment = {
           text: row.comment_text,
           id: row["comment-id"].toString(),
-          voteTalliesByGroup: {
-            "group-0": new VoteTally(
-              Number(row["group-0-agree-count"]),
-              Number(row["group-0-disagree-count"]),
-              Number(row["group-0-pass-count"])
-            ),
-            "group-1": new VoteTally(
-              Number(row["group-1-agree-count"]),
-              Number(row["group-1-disagree-count"]),
-              Number(row["group-1-pass-count"])
-            ),
-          },
+          voteTalliesByGroup: {},
         };
-        if ("topic" in row && "subtopic" in row) {
-          // TODO: add support for multiple topics and subtopics per comment
-          newComment.topics = [
-            {
-              name: row["topic"].toString(),
-              subtopics: [{ name: row["subtopic"].toString() }],
-            },
-          ];
+        const voteTalliesByGroup: { [key: string]: VoteTally } = {};
+        for (let i = 0; i < numGroups; i++) {
+          const groupKey: string = `group-${i}`;
+          voteTalliesByGroup[groupKey] = new VoteTally(
+            Number(row[`${groupKey}-agree-count` as VoteTallyGroupKey]),
+            Number(row[`${groupKey}-disagree-count` as VoteTallyGroupKey]),
+            Number(row[`${groupKey}-pass-count` as VoteTallyGroupKey])
+          );
         }
+        newComment.voteTalliesByGroup = voteTalliesByGroup;
+
+        // Add topics and subtopics if available
+        if (row.topic && row.subtopic) {
+          newComment.topics = [];
+          newComment.topics.push({
+            name: row.topic.toString(),
+            subtopics: [{ name: row.subtopic.toString() }],
+          });
+        }
+
         data.push(newComment);
       })
       .on("end", () => resolve(data));
