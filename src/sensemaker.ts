@@ -33,6 +33,7 @@ import { ModelSettings, Model } from "./models/model";
 import { groundSummary, parseStringIntoSummary } from "./validation/grounding";
 import { GroupedSummaryStats, SummaryStats } from "./stats_util";
 import { summaryContainsStats } from "./validation/stats_checker";
+import { resolvePromisesInParallel } from "./tasks/summarization_subtasks/recursive_summarization";
 
 // Class to make sense of conversation data. Uses LLMs to learn what topics were discussed and
 // categorize comments. Then these categorized comments can be used with optional Vote data to
@@ -219,8 +220,10 @@ export class Sensemaker {
 
     const instructions = generateCategorizationPrompt(topics, includeSubtopics);
 
-    // Call the model in batches, validate results and retry if needed.
-    const categorized: CommentRecord[] = [];
+    // TODO: Consider the effects of smaller batch sizes. 1 comment per batch was much faster, but
+    // the distribution was significantly different from what we're currently seeing. More testing
+    // is needed to determine the ideal size and distribution.
+    const batchesToCategorize: Promise<CommentRecord[]>[] = [];
     for (
       let i = 0;
       i < comments.length;
@@ -230,16 +233,22 @@ export class Sensemaker {
         i,
         i + this.modelSettings.defaultModel.categorizationBatchSize
       );
-      const categorizedBatch = await categorizeWithRetry(
-        this.modelSettings.defaultModel,
-        instructions,
-        uncategorizedBatch,
-        includeSubtopics,
-        topics,
-        additionalContext
+      batchesToCategorize.push(
+        categorizeWithRetry(
+          this.modelSettings.defaultModel,
+          instructions,
+          uncategorizedBatch,
+          includeSubtopics,
+          topics,
+          additionalContext
+        )
       );
-      categorized.push(...categorizedBatch);
     }
+
+    const categorized: CommentRecord[] = [];
+    await resolvePromisesInParallel(batchesToCategorize).then((results: CommentRecord[][]) => {
+      results.forEach((batch) => categorized.push(...batch));
+    });
 
     const categorizedComments = hydrateCommentRecord(categorized, comments);
     console.log(`Categorization took ${(performance.now() - startTime) / (1000 * 60)} minutes.`);
