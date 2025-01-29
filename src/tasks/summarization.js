@@ -22,26 +22,53 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MultiStepSummary = void 0;
+exports._getIntroText = _getIntroText;
 exports.getSummarizationInstructions = getSummarizationInstructions;
 exports.summarizeByType = summarizeByType;
 exports.basicSummarize = basicSummarize;
-exports.formatCommentsWithVotes = formatCommentsWithVotes;
 exports.voteTallySummarize = voteTallySummarize;
 exports.retryGenerateSummary = retryGenerateSummary;
-exports._sortTopicsByComments = _sortTopicsByComments;
 exports._quantifyTopicNames = _quantifyTopicNames;
 const types_1 = require("../types");
 const sensemaker_utils_1 = require("../sensemaker_utils");
 const vertex_model_1 = require("../models/vertex_model");
+const intro_1 = require("./summarization_subtasks/intro");
+const groups_1 = require("./summarization_subtasks/groups");
+const topics_1 = require("./summarization_subtasks/topics");
+const conclusion_1 = require("./summarization_subtasks/conclusion");
+/**
+ * Create an intro paragraph formatted in markdown with statistics.
+ *
+ * @param commentCount the number of comments in the conversation
+ * @param voteCount the number of votes in the conversation
+ * @param quantifiedTopics the topics and subtopics with the comment count information and ordered
+ * by size
+ * @returns a intro paragraph in markdown
+ */
+function _getIntroText(commentCount, voteCount, quantifiedTopics) {
+    const commentCountFormatted = commentCount.toLocaleString();
+    const voteCountFormatted = voteCount.toLocaleString();
+    let text = `This report summarizes the results of public input, encompassing ` +
+        `__${commentCountFormatted} comments__ and ` +
+        `${voteCount > 0 ? `__${voteCountFormatted} votes__` : ""}. All voters were anonymous. The ` +
+        `public input collected covered a wide range of topics and subtopics, including:\n`;
+    for (const topicName in quantifiedTopics) {
+        text += " * __" + topicName + "__\n";
+        const subtopicNames = quantifiedTopics[topicName];
+        const subtopicText = "     * " + subtopicNames.join(", ") + "\n";
+        // Remove the substring "comments" from the list of subtopics for conciseness.
+        text += subtopicText.replace(/ comments/g, "");
+    }
+    return text;
+}
 function getSummarizationInstructions(includeGroups, summaryStats) {
     // Prepare statistics like vote count and number of comments per topic for injecting in prompt as
     // well as sorts topics based on count.
     const topicStats = summaryStats.getStatsByTopic();
-    const sortedTopics = _sortTopicsByComments(topicStats);
-    const quantifiedTopics = _quantifyTopicNames(sortedTopics);
-    const commentCount = summaryStats.commentCount.toLocaleString();
-    const voteCount = summaryStats.voteCount.toLocaleString();
-    return `You’re analyzing the results of a public deliberation on a topic. It contains comments and associated votes.
+    const quantifiedTopics = _quantifyTopicNames(topicStats);
+    const introText = _getIntroText(summaryStats.commentCount, summaryStats.voteCount, quantifiedTopics);
+    return `You’re analyzing the results of a public conversation on a topic. It contains comments and associated votes.
 You will summarize with the summary having all of the following categories and subcategories:
 
 ${JSON.stringify(quantifiedTopics, null, 2)}
@@ -51,15 +78,17 @@ Use categories or subcategories names exactly as they are provided (for example:
 Your task is to write a summary for each section, taking into account the opinions of the groups, including minority viewpoints.
 
 First explain the perspectives of each group, highlighting common ground and points of division.
-Then, for areas of disagreement, analyze comments to see if there's a solution backed by the statements, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the statements.
-Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the statements.
-The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the deliberation statements.
+- If vote tallies per each group are included in the comment data, pay attention to not just the content of the comments in relation to the summary claims, but also to whether the claims accurately reflect the vote breakdown by each group.
+- If there is a group with high number of disagree votes on the claim, do not state that there is strong or widespread support or high consensus. You goal is to avoid misrepresentation of group's opinion based on the group's votes.
+Then, for areas of disagreement, analyze comments to see if there's a solution backed by the comments, that can be served as a common ground endorsed by all groups. Do not suggest any novel ideas not grounded in the comments.
+Finally, rewrite the section summary incorporating the common ground and divisions with potential solutions grounded in the comments.
+The new summary should be substantiated, detailed and informative: include specific findings, requests, proposals, action items and examples, grounded in the conversation comments.
 
 Do not generate:
 - Generic summaries (e.g., "There was discussion about ...")
 - Broad statements lacking specific details (e.g., "In many areas, ..."")
 Do not include group vote tallies in the summary.
-Do not crop the response; include all sections of the deliberation.
+Do not crop the response; include all sections of the conversation.
 
 The summary must follow this format:
 
@@ -79,17 +108,11 @@ ${includeGroups ? "## Description of Groups" : ""}
     * _Low consensus:_
 ## Conclusion
 
-The introduction should be one paragraph long and contain ${includeGroups ? "five" : "four"} sentences.
-The first sentence should include the information that there were ${commentCount} comments ${includeGroups ? `that had ${voteCount} votes` : ""}.
-The second sentence should include what topics were discussed. 
-${includeGroups
-        ? "The third sentence should include information on the groups such " +
-            "as their similarities and differences. "
-        : ""} 
-The next sentence should list topics with consensus.
-The last sentence should list topics without consensus.
+Please use this text for the Intro section: ${introText}
 
-${includeGroups ? "There should be a one-paragraph section describing the voting groups, focusing on their expressed views without guessing demographics." : ""}
+If group vote data is available, include a one-paragraph section describing the voting groups, using the provided group names. Focus on the groups' expressed views and opinions as reflected in the comments and votes, without speculating about demographics. Avoid politically charged classifications (e.g., "conservative," "liberal", or "progressive"). Instead, describe each group based on their demonstrated preferences within the conversation (e.g., "Group A favored X, while Group B prioritized Y"). Frame the entire summary around the perspectives of these groups, indicating for each claim whether the groups agree or disagree.
+
+Within the high/low consensus summary list out the specific issues and make them bold (by wrapping them in double asterisks "**"), e.g. "**Developing the riverfront**", to make those proposals more clear and help spot the relative priority or consensus of specific issues more easily at a glance.
 `;
 }
 /**
@@ -98,17 +121,20 @@ ${includeGroups ? "There should be a one-paragraph section describing the voting
  * @param model The language model to use for summarization.
  * @param comments An array of `Comment` objects containing the comments to summarize.
  * @param summarizationType The type of summarization to perform (e.g., BASIC, VOTE_TALLY).
- * @param additionalInstructions Optional additional instructions to guide the summarization process. These instructions will be included verbatim in the prompt sent to the LLM.
+ * @param additionalContext Optional additional instructions to guide the summarization process. These instructions will be included verbatim in the prompt sent to the LLM.
  * @returns A Promise that resolves to the generated summary string.
  * @throws {TypeError} If an unknown `summarizationType` is provided.
  */
-function summarizeByType(model, summaryStats, summarizationType, additionalInstructions) {
+function summarizeByType(model, summaryStats, summarizationType, additionalContext) {
     return __awaiter(this, void 0, void 0, function* () {
         if (summarizationType === types_1.SummarizationType.BASIC) {
-            return yield basicSummarize(summaryStats, model, additionalInstructions);
+            return yield basicSummarize(summaryStats, model, additionalContext);
         }
         else if (summarizationType === types_1.SummarizationType.VOTE_TALLY) {
-            return yield voteTallySummarize(summaryStats, model, additionalInstructions);
+            return yield voteTallySummarize(summaryStats, model, additionalContext);
+        }
+        else if (summarizationType === types_1.SummarizationType.MULTI_STEP) {
+            return yield new MultiStepSummary(summaryStats, model, additionalContext).getSummary();
         }
         else {
             throw new TypeError("Unknown Summarization Type.");
@@ -116,36 +142,49 @@ function summarizeByType(model, summaryStats, summarizationType, additionalInstr
     });
 }
 /**
+ *
+ */
+class MultiStepSummary {
+    constructor(summaryStats, model, additionalContext) {
+        this.summaryStats = summaryStats;
+        this.model = model;
+        this.additionalContext = additionalContext;
+    }
+    getSummary() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const introSummary = yield new intro_1.IntroSummary(this.summaryStats, this.model, this.additionalContext).getSummary();
+            const groupsSummary = yield new groups_1.GroupsSummary(this.summaryStats, this.model, this.additionalContext).getSummary();
+            const topicsSummary = yield new topics_1.TopicsSummary(this.summaryStats, this.model, this.additionalContext).getSummary();
+            const conclusionSummary = yield new conclusion_1.ConclusionSummary(this.summaryStats, this.model, this.additionalContext).getSummary();
+            // return a concatenation of the separate sections, with two newlines separating each section
+            return (introSummary + "\n\n" + groupsSummary + "\n\n" + topicsSummary + "\n\n" + conclusionSummary);
+        });
+    }
+}
+exports.MultiStepSummary = MultiStepSummary;
+/**
  * Summarizes the comments using a LLM on Vertex.
  * @param instructions: how the comments should be summarized.
  * @param comments: the data to summarize
- * @param additionalInstructions: additional context to include in the prompt.
+ * @param additionalContext: additional context to include in the prompt.
  * @returns: the LLM's summarization.
  */
-function basicSummarize(summaryStats, model, additionalInstructions) {
+function basicSummarize(summaryStats, model, additionalContext) {
     return __awaiter(this, void 0, void 0, function* () {
-        const prompt = (0, sensemaker_utils_1.getPrompt)(getSummarizationInstructions(false, summaryStats), summaryStats.comments.map((c) => c.text), additionalInstructions);
+        const prompt = (0, sensemaker_utils_1.getPrompt)(getSummarizationInstructions(false, summaryStats), summaryStats.comments.map((c) => c.text), additionalContext);
         return retryGenerateSummary(model, prompt);
     });
 }
 /**
- * Utility function for formatting the comments together with vote tally data
- * @param commentData: the data to summarize, as an array of Comment objects
- * @returns: comments, together with vote tally information as JSON
- */
-function formatCommentsWithVotes(commentData) {
-    return commentData.map((comment) => comment.text + "\n      vote info per group: " + JSON.stringify(comment.voteTalliesByGroup));
-}
-/**
  * Summarizes the comments using a LLM on Vertex.
  * @param instructions: how the comments should be summarized.
  * @param commentData: the data to summarize, as an array of Comment objects
- * @param additionalInstructions: additional context to include in the prompt.
+ * @param additionalContext: additional context to include in the prompt.
  * @returns: the LLM's summarization.
  */
-function voteTallySummarize(summaryStats, model, additionalInstructions) {
+function voteTallySummarize(summaryStats, model, additionalContext) {
     return __awaiter(this, void 0, void 0, function* () {
-        const prompt = (0, sensemaker_utils_1.getPrompt)(getSummarizationInstructions(true, summaryStats), formatCommentsWithVotes(summaryStats.comments), additionalInstructions);
+        const prompt = (0, sensemaker_utils_1.getPrompt)(getSummarizationInstructions(true, summaryStats), (0, sensemaker_utils_1.formatCommentsWithVotes)(summaryStats.comments), additionalContext);
         return retryGenerateSummary(model, prompt);
     });
 }
@@ -171,33 +210,6 @@ function retryGenerateSummary(model, prompt) {
         [] // no additional arguments for the validation - the summary is passed automatically
         );
     });
-}
-/**
- * Sorts topics and their subtopics based on comment count in descending order, with "Other" topics and subtopics going last.
- *
- * @param topics An array of `TopicStats` objects to be sorted.
- * @returns A new array of `TopicStats` objects, sorted by comment count.
- */
-function _sortTopicsByComments(topics) {
-    topics.sort((a, b) => {
-        if (a.name === "Other")
-            return 1;
-        if (b.name === "Other")
-            return -1;
-        return b.commentCount - a.commentCount;
-    });
-    topics.forEach((topic) => {
-        if (topic.subtopicStats) {
-            topic.subtopicStats.sort((a, b) => {
-                if (a.name === "Other")
-                    return 1;
-                if (b.name === "Other")
-                    return -1;
-                return b.commentCount - a.commentCount;
-            });
-        }
-    });
-    return topics;
 }
 /**
  * Quantifies topic names by adding the number of associated comments in parentheses.

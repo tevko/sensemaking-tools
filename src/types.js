@@ -15,6 +15,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VoteTally = exports.Summary = exports.SummarizationType = exports.CommentRecord = exports.SubtopicCategorizedComment = exports.TopicCategorizedComment = exports.Topic = exports.NestedTopic = exports.FlatTopic = void 0;
 exports.isVoteTallyType = isVoteTallyType;
+exports.isCommentWithVoteTalliesType = isCommentWithVoteTalliesType;
 exports.isCommentType = isCommentType;
 exports.checkDataSchema = checkDataSchema;
 exports.isCommentRecordType = isCommentRecordType;
@@ -70,6 +71,7 @@ var SummarizationType;
 (function (SummarizationType) {
     SummarizationType[SummarizationType["BASIC"] = 0] = "BASIC";
     SummarizationType[SummarizationType["VOTE_TALLY"] = 1] = "VOTE_TALLY";
+    SummarizationType[SummarizationType["MULTI_STEP"] = 2] = "MULTI_STEP";
 })(SummarizationType || (exports.SummarizationType = SummarizationType = {}));
 /**
  * Represents a summary composed of multiple chunks.
@@ -146,6 +148,19 @@ function isVoteTallyType(data) {
         "disagreeCount" in data &&
         typeof data.disagreeCount === "number" &&
         (!("passCount" in data) || typeof data.passCount === "number"));
+}
+/**
+ * Checks if the given data is a CommentWithVoteTallies object (that is, a Comment object that includes VoteTallies), and sets the type as such if it passes.
+ * @param data the object to check
+ * @returns true if the object is a CommentWithVoteTallies, and false otherwise.
+ */
+// eslint-disable-next-line  @typescript-eslint/no-explicit-any
+function isCommentWithVoteTalliesType(data) {
+    return (typeof data === "object" &&
+        data !== null &&
+        "voteTalliesByGroup" in data &&
+        isVoteTallyByGroup(data.voteTalliesByGroup) &&
+        isCommentType(data));
 }
 /**
  * Checks if the given object is a dictionary of group names to VoteTally objects.

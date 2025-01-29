@@ -30,9 +30,9 @@ describe("QuickChecksTest", () => {
 
   it("Should get list of Subtopic names from Topics array.", () => {
     const topics = [
-      { name: "Topic 1", subtopics: [{ name: "Subtopic 1" }, { name: "Subtopic 2" }] },
-      { name: "Topic 2" },
-      { name: "Topic 3", subtopics: [{ name: "Subtopic 3" }] },
+      { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }, { name: "Subtopic 2", citations: [1] }] },
+      { name: "Topic 2", citations: [1] },
+      { name: "Topic 3", citations: [1], subtopics: [{ name: "Subtopic 3", citations: [1] }] },
     ];
     expect(getSubtopicNames(topics)).toEqual(["Subtopic 1", "Subtopic 2", "Subtopic 3"]);
   });

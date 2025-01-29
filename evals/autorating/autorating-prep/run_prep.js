@@ -1,5 +1,5 @@
 "use strict";
-// Copyright 2024 Google LLC
+// Copyright 2025 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,58 +45,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// Run the summarizer based on CSV data as output from the processing scripts in the `bin`
-// directory, and as documented in `runner_utils.ts`.
+// Autorating prep runner
+// Command to run:
+// npx ts-node evals/autorating/autorating-prep/run_prep.ts -s <path/to/summary.txt> -c <path/to/comments.csv> -o <path/to/output.csv>
 const commander_1 = require("commander");
-const fs = __importStar(require("fs"));
-const marked_1 = require("marked");
-const runner_utils_1 = require("./runner_utils");
+const summary_splitter_1 = require("./summary_splitter");
+const path = __importStar(require("path"));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Parse command line arguments.
         const program = new commander_1.Command();
         program
-            .option("-o, --outputFile <file>", "The output file name.")
-            .option("-i, --inputFile <file>", "The input file name.")
-            .option("-a, --additionalContext <context>", "A short description of the conversation to add context.")
-            .option("-v, --vertexProject <project>", "The Vertex Project name.");
+            .requiredOption("-s, --summaryFile <file>", "Path to the summary file", "evals/autorating/autorating-prep/summary.txt")
+            .requiredOption("-c, --commentsFile <file>", "Path to the comments CSV file", "evals/autorating/autorating-prep/comments.csv")
+            .option("-o, --outputFile <file>", "Path to the output CSV file", "evals/autorating/autorating-prep/summary_statements.csv");
         program.parse(process.argv);
         const options = program.opts();
-        const comments = yield (0, runner_utils_1.getCommentsFromCsv)(options.inputFile);
-        // check if any comments have topics before using getTopicsFromComments, otherwise, learn topics using runner_utils function
-        let topics;
-        if (comments.length > 0 && comments.some((comment) => comment.topics)) {
-            console.log("Comments already have topics. Skipping topic learning.");
-            topics = (0, runner_utils_1.getTopicsFromComments)(comments);
-        }
-        else {
-            console.log("Learning topics from comments.");
-            topics = yield (0, runner_utils_1.getTopicsAndSubtopics)(options.vertexProject, comments);
-        }
-        const summary = yield (0, runner_utils_1.getSummary)(options.vertexProject, comments, topics, options.additionalContext);
-        const markdownContent = summary.getText("MARKDOWN");
-        const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Summary</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-    </style>
-</head>
-<body>
-    ${(0, marked_1.marked)(markdownContent)}
-</body>
-</html>`;
-        const outputPath = `${options.outputFile}.html`;
-        fs.writeFileSync(outputPath, htmlContent);
-        console.log(`Written summary to ${outputPath}`);
+        const summaryFilePath = path.resolve(options.summaryFile);
+        const commentsFilePath = path.resolve(options.commentsFile);
+        const outputFilePath = path.resolve(options.outputFile);
+        (0, summary_splitter_1.splitSummaryAndLinkComments)(summaryFilePath, commentsFilePath, outputFilePath);
     });
 }
 main();

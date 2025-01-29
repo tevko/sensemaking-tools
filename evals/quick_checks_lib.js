@@ -14,6 +14,8 @@
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPercentageContainsString = getPercentageContainsString;
+exports.getSubtopicNames = getSubtopicNames;
+exports.getPercentageContainsStrings = getPercentageContainsStrings;
 exports.runQuickChecks = runQuickChecks;
 // Library for running quick checks on summarization.
 const csv_writer_1 = require("csv-writer");
@@ -29,9 +31,31 @@ function containsString(summary, str) {
  */
 function getPercentageContainsString(summaries, str) {
     const containsIntroCount = summaries.reduce((accumulator, summary) => {
-        return accumulator + Number(containsString(summary.getText("MARKDOWN"), str));
+        return accumulator + Number(containsString(summary, str));
     }, 0);
     return (containsIntroCount / summaries.length) * 100;
+}
+/**
+ * Get a list of subtopic names from a Topic object.
+ * @param topics the topics to flatten.
+ */
+function getSubtopicNames(topics) {
+    const nestedSubtopics = topics.map((topic) => {
+        return "subtopics" in topic ? topic.subtopics : [];
+    });
+    const subtopics = nestedSubtopics.reduce((accumulator, value) => accumulator.concat(value), []);
+    return subtopics.map((topic) => {
+        return topic.name;
+    });
+}
+function getPercentageContainsStrings(summaries, expectedMatches) {
+    let matchCount = 0;
+    for (const summary of summaries) {
+        for (const expectedMatch of expectedMatches) {
+            matchCount += Number(containsString(summary, expectedMatch));
+        }
+    }
+    return (matchCount / expectedMatches.length / summaries.length) * 100;
 }
 /**
  * Run a series of simple automated tests.
@@ -44,19 +68,32 @@ function getPercentageContainsString(summaries, str) {
  * @param outputDir the directory to output the eval results to.
  * @param summaries the summaries to consider.
  */
-function runQuickChecks(outputDir, summaries) {
+function runQuickChecks(outputDir, summaries, topics) {
     const csvWriter = (0, csv_writer_1.createObjectCsvWriter)({
         path: outputDir + "/" + QUICK_CHECKS_FILE_NAME,
-        header: ["evalName", "performance"],
+        header: [
+            { id: "evalName", title: "Evaluation Name" },
+            { id: "performance", title: "Performance" },
+        ],
     });
     const outputTexts = [
         {
-            evalName: "% of Summaries that Contain an Intro Section",
+            evalName: "% of Summaries that Contain an Intro Section (expect 100%)",
             performance: getPercentageContainsString(summaries, "Intro"),
         },
         {
-            evalName: "% of Summaries that Contain a Conclusion Section",
+            evalName: "% of Summaries that Contain a Conclusion Section (expect 100%)",
             performance: getPercentageContainsString(summaries, "Conclusion"),
+        },
+        {
+            evalName: "% of Topics Included in Summary (expect 100%)",
+            performance: getPercentageContainsStrings(summaries, topics.map((topic) => {
+                return topic.name;
+            })),
+        },
+        {
+            evalName: "% of Subtopics Included in Summary (expect 100%)",
+            performance: getPercentageContainsStrings(summaries, getSubtopicNames(topics)),
         },
     ];
     csvWriter

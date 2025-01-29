@@ -24,8 +24,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.retryCall = retryCall;
 exports.getPrompt = getPrompt;
+exports.formatCommentsWithVotes = formatCommentsWithVotes;
 exports.hydrateCommentRecord = hydrateCommentRecord;
 exports.groupCommentsBySubtopic = groupCommentsBySubtopic;
+exports.decimalToPercent = decimalToPercent;
 const vertex_model_1 = require("./models/vertex_model");
 /**
  * Rerun a function multiple times.
@@ -63,15 +65,26 @@ function retryCall(func_1, isValid_1, maxRetries_1, errorMsg_1) {
  * Combines the data and instructions into a prompt to send to Vertex.
  * @param instructions: what the model should do.
  * @param data: the data that the model should consider.
- * @param additionalInstructions additional context to include in the prompt.
+ * @param additionalContext additional context to include in the prompt.
  * @returns the instructions and the data as a text
  */
-function getPrompt(instructions, data, additionalInstructions) {
-    return `Instructions:
-${instructions}
-${additionalInstructions ? "\nAdditional context:\n" + additionalInstructions + "\n" : ""}
-Comments:
-${data.join("\n")}`; // separate comments with newlines
+function getPrompt(instructions, data, additionalContext) {
+    return `
+<instructions>
+  ${instructions}
+</instructions>
+${additionalContext ? "\n<additionalContext>\n  " + additionalContext + "\n</additionalContext>\n" : ""}
+<data>
+  <comment>${data.join("</comment>\n  <comment>")}</comment>
+</data>`;
+}
+/**
+ * Utility function for formatting the comments together with vote tally data
+ * @param commentData: the data to summarize, as an array of Comment objects
+ * @returns: comments, together with vote tally information as JSON
+ */
+function formatCommentsWithVotes(commentData) {
+    return commentData.map((comment) => comment.text + "\n      vote info per group: " + JSON.stringify(comment.voteTalliesByGroup));
 }
 /**
  * Converts the given commentRecords to Comments.
@@ -128,10 +141,21 @@ function groupCommentsBySubtopic(categorized) {
                     if (!groupedComments[topic.name][subtopic.name]) {
                         groupedComments[topic.name][subtopic.name] = {}; // init new subtopic name
                     }
-                    groupedComments[topic.name][subtopic.name][comment.id] = comment.text;
+                    groupedComments[topic.name][subtopic.name][comment.id] = comment;
                 }
             }
         }
     }
     return groupedComments;
+}
+/**
+ * Format a decimal number as a percent string with the given precision
+ * @param decimal The decimal number to convert
+ * @param precision The precision
+ * @returns A string representing the equivalent percentage
+ */
+function decimalToPercent(decimal, precision = 0) {
+    const percentage = decimal * 100;
+    const roundedPercentage = Math.round(percentage * 10 ** precision) / 10 ** precision;
+    return `${roundedPercentage}%`;
 }

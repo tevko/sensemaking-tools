@@ -26,14 +26,13 @@ exports.identifyClaimsPrompt = identifyClaimsPrompt;
 exports.assignGroundingPrompt = assignGroundingPrompt;
 exports.verifyGroundingPrompt = verifyGroundingPrompt;
 exports.finalizeGroundingPrompt = finalizeGroundingPrompt;
-exports.voteTallySummary = voteTallySummary;
-exports.commentCitation = commentCitation;
 exports.formatCitations = formatCitations;
 exports.commentTable = commentTable;
 exports.parseStringIntoSummary = parseStringIntoSummary;
 exports.groundSummary = groundSummary;
 // Routines for grounding summarization results in source comments and vote data, to ensure accuracy.
 const types_1 = require("../types");
+const citation_utils_1 = require("../tasks/utils/citation_utils");
 const summarization_1 = require("../tasks/summarization");
 function formatComments(comments) {
     return (comments.map((comment) => "```\n" + JSON.stringify(comment)).join("\n") +
@@ -49,20 +48,37 @@ In what follows you will be a given a summary of the outputs from a deliberative
 
 For now, you job is the following: Identify portions of text in the summary making claims that need to be so grounded, and mark them by bracketing with double square brackets [[]], followed by a ^ character, and an empty set of single square brackets, which will eventually (in a later step) be the place where you identify grounding comment-ids, like this:
 
-    [[a claim that needs to be grounded]]^[]
+    [[a **specific claim** that needs to be grounded]]^[]
 
-If a portion of text is followed by a punctuation mark, like a comma, period, etc., then include the punctuation within the double brackets, like this:
+If a portion of text is followed by a punctuation mark, like a comma, period, etc., then include the punctuation within the double brackets.
 
-    [[a claim that needs to be grounded,]]^[]
-    [[a claim that needs to be grounded.]]^[]
+These are correct examples (punctuation is within the double brackets):
+
+    [[a **specific claim** that needs to be grounded,]]^[]
+    [[**a specific claim that needs to be grounded**.]]^[]
+
+
+These are incorrect examples (punctuation is outside of the double brackets):
+
+    [[a **specific claim** that needs to be grounded]],^[]
+    [[**a specific claim that needs to be grounded**]].^[]
 
 However, prefer marking segments of texts that identify atomic or singular claims, rather than larger chunks (like complete sentences) of text making a larger number of claims.
 
-Do not ground topic and subtopics names (like "Infrastructure (5 comments)").
+Do not ground:
+- topic and subtopics names (like "Infrastructure (5 comments)"),
+- claims about the number of total comments in the conversation or the number of total votes.
 
-Do not ground claims about the number of total comments in the conversation or the number of total votes.
+THIS IS IMPORTANT!
+Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, special symbols (like asterisks "*"), indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of brackets as described above.
+You must preserve the existing double asterisks "**" (that represent bold markdown) in the summary, e.g. "**this is a claim**" should remain intact. Do not remove the existing double asterisks "**".
+For example, this sentence should preserve double asterisks "**":
+this is **a very specific claim**,
+And when you add double brackets to the sentence above, you must keep the double asterisks "**" intact, like this:
+[[this is **a very specific claim**,]]^[]
+Leave the double asterisks "**" around phrases like **99 comments** alone, do not remove them.
 
-THIS IS IMPORTANT! Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of brackets as described above.
+Do not crop the response; you must include all sections of the summary.
 
 Here is the summary for grounding:
 
@@ -75,9 +91,11 @@ ${summary}`;
  */
 function assignGroundingPrompt(summary, comments) {
     return `
-In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation.
+In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the conversation.
 
-Your job: for each portion of text in the summary that is making a statement about the content of what was said in the comments (or how participants expressed themselves via votes submitted in response to other participant's comments), identify those comments that substantiate the claims being made in the corresponding portion of text, and place the comment ids for those statements in the single square brackets following the ^ character. For example, if you see a summary statement that looks like:
+Your job: for each portion of text in the summary that is making a statement about the content of what was said in the comments (or how participants expressed themselves via votes submitted in response to other participant's comments), identify those comments that substantiate the claims being made in the corresponding portion of text.
+Select up to five comment IDs that best represent the statement being grounded. Prioritize comments that strongly support the statement, either through their text content or associated group votes. This includes comments demonstrating strong agreement and strong disagreement with the statement, as both can be valuable indicators of a clear perspective.
+Place the comment ids for those statements in the single square brackets following the ^ character. For example, if you see a summary statement that looks like:
 
     [[a claim that needs to be grounded]]^[]
 
@@ -89,9 +107,20 @@ You may notice that some statements marked for grounding already have comment id
 identify new comments that help ground the statement, you can add those comment ids to the existing set.
 
 Add comment ids only, and don't add anything else.
+Do not add text like "All comment ids" or "There were X comments in the conversation".
+
+This is correct:
+
+    [[**An excellent claim**]]^[1,2,3,4,5]
+
+This is NOT correct:
+
+    [[**An excellent claim**]]^[All comment ids]
 
 THIS IS IMPORTANT!
-Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of comment ids in brackets as described above.
+Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, special symbols (like asterisks "*"), indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the addition of comment ids in brackets as described above.
+
+Do not crop the response; you must include all sections of the summary.
 
 Here is the summary for grounding:
 
@@ -108,7 +137,7 @@ ${formatComments(comments)}`;
  */
 function verifyGroundingPrompt(summary, comments) {
     return `
-In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the deliberation. These portions of text will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which may or may not ground the summary statement. For example, you might see:
+In what follows you will be a given a summary of the outputs from a deliberative exercise, together with the comments and associated metadata that were the inputs for those summaries. This metadata specifically includes a comment-id, and possibly also a summary of voting patterns for some number of opinion or demographic groups. Portions of the summary that have been surrounded by double square brackets [[]], have been previously identified as claims that need to be grounded in (i.e. backed up by) comments submitted as part of the conversation. These portions of text will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which may or may not ground the summary statement. For example, you might see:
 
     [[a claim that needs to be grounded]]^[3,5,10]
 
@@ -120,10 +149,16 @@ if no statements have been identified as grounding the statement.
 
 Your job: for each portion of text in the summary that has been so marked, check that the comments corresponding to the flagged comment ids actually back up the corresponding claim. If a marked comment id does not back up a claim in the summary, remove it from the list of comment ids.
 
-If vote tallies (by grouping factor) are included in the comment data, pay attention to not just the content of the comments in relation to the summary claims, but also to whether the claims accurately reflect the vote breakdown. As you do this, pay attention not just to the marked portion of text, but also the context in which it is situated, such as surrounding text, or event the section it falls in (which might contextualize the claim being made about the highlighted portion of text).
+If vote tallies per each group are included in the comment data, pay attention to not just the content of the comments in relation to the summary claims, but also to whether the claims accurately reflect the vote breakdown by each group.
+If there is a group with high number of disagree votes on a claim, do not state that there is strong or widespread support, and do not put this claim under high consensus. You goal is to avoid misrepresentation of group's opinion based on the group's votes.
+Example: Do not put a claim "There's strong support for a X" under "High consensus" section, if the number of "Disagree" votes from any group on any comment related to this statement is higher (say 500) than "Agree" votes (say 100).
+
+As you do this, pay attention not just to the marked portion of text, but also the context in which it is situated, such as surrounding text, or event the section it falls in (which might contextualize the claim being made about the highlighted portion of text).
 
 THIS IS IMPORTANT!
-Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the removal of comment ids in brackets as described above.
+Leave any portion of text from the original summary that does not need to be grounded alone. The overall structure of the summary text should not change, and all text, punctuation, special symbols (like asterisks "*"), indentation and aspects of markdown notation should be left as is. The only changes to the original text you should make are in the removal of comment ids in brackets as described above.
+
+Do not crop the response; you must include all sections of the summary.
 
 Here is the summary for grounding:
 
@@ -139,7 +174,7 @@ ${formatComments(comments)}`;
  */
 function finalizeGroundingPrompt(summary) {
     return `
-In what follows you will be given a summary of the outputs from a deliberative exercise. Portions of the summary that have been surrounded by double square brackets [[]] have been previously identified as being in need of grounding (that is, of being backed up by comments submitted as part of the deliberation). Portions of text so marked will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which have been identified as grounding the statement. For example, you might see:
+In what follows you will be given a summary of the outputs from a deliberative exercise. Portions of the summary that have been surrounded by double square brackets [[]] have been previously identified as being in need of grounding (that is, of being backed up by comments submitted as part of the conversation). Portions of text so marked will be followed by a ^ and then another set of single square brackets [] containing a list of comment ids which have been identified as grounding the statement. For example, you might see:
 
     [[a claim that needs to be grounded.]]^[3,5,10]
 
@@ -152,42 +187,13 @@ if no comments have been identified as grounding the statement.
 Your job: for each statement in the summary that has been so marked, if there are no comments that have been found to ground the statement, then remove the statement from the summary, and if necessary, adjust the surrounding text to that it makes sense without the removed statement.
 
 THIS IS IMPORTANT!
-Leave in any portion of text from the original summary that does not need to be grounded and is not invalidated by the removal of a claim. The overall structure of the summary text should not change, and all text, punctuation, indentation and aspects of markdown notation should be left as is, unless they have become unecessary due to the removal of text as described above.
+Leave in any portion of text from the original summary that does not need to be grounded and is not invalidated by the removal of a claim. The overall structure of the summary text should not change, and all text, punctuation, special symbols (like asterisks "*"), indentation and aspects of markdown notation should be left as is, unless they have become unnecessary due to the removal of text as described above.
+
+Do not crop the response; you must include all sections of the summary.
 
 Here is the summary for editing:
 
 ${summary}`;
-}
-/**
- * Utility function for displaying a concise textual summary of the vote tally patterns for a given comment
- * @param comment
- * @returns the summary as a string
- */
-function voteTallySummary(comment) {
-    // Map k,v pairs from comment vote tallies to string representations, and combine into a single string.
-    if (comment.voteTalliesByGroup) {
-        return Object.entries(comment.voteTalliesByGroup).reduce((acc, [key, value]) => {
-            return (acc +
-                ` group-${key}(Agree=${value.agreeCount}, Disagree=${value.disagreeCount}, Pass=${value.passCount})`);
-        }, "Votes:");
-    }
-    else {
-        return "";
-    }
-}
-/**
- * Utility function for displaying a concise textual summary of a comment as text plus the vote tally patterns (via voteTallySummary)
- * @param comment
- * @returns the summary as a string
- */
-function commentCitation(comment) {
-    const base = `[${comment.id}](## "${comment.text.replace(/"/g, '\\"').replace(/\n/g, " ")}`;
-    if (comment.voteTalliesByGroup) {
-        return base + `\n${voteTallySummary(comment)}")`;
-    }
-    else {
-        return base + `")`;
-    }
 }
 /**
  * Replace citation notation with hoverover links for analysis
@@ -205,7 +211,7 @@ function formatCitations(comments, summary) {
         // Extract the individual comment ids from the match.
         const commentIds = match.split(/,\s*/);
         // Map to markdown links that display the comment text and vote patterns when you hover over.
-        const mdLinks = commentIds.map((commentId) => commentCitation(commentIndex.get(commentId)));
+        const mdLinks = commentIds.map((commentId) => (0, citation_utils_1.commentCitation)(commentIndex.get(commentId)));
         return "[" + mdLinks.join(", ") + "]";
     });
     // For debugging, add commentTable for searching comments that might have been removed at previous steps.

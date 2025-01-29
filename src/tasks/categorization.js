@@ -41,10 +41,10 @@ const typebox_1 = require("@sinclair/typebox");
  * @param inputComments The comments to categorize.
  * @param includeSubtopics Whether to include subtopics in the categorization.
  * @param topics The topics and subtopics provided to the LLM for categorization.
- * @param additionalInstructions - extra context to be included to the LLM prompt
+ * @param additionalContext - extra context to be included to the LLM prompt
  * @returns The categorized comments.
  */
-function categorizeWithRetry(model, instructions, inputComments, includeSubtopics, topics, additionalInstructions) {
+function categorizeWithRetry(model, instructions, inputComments, includeSubtopics, topics, additionalContext) {
     return __awaiter(this, void 0, void 0, function* () {
         // a holder for uncategorized comments: first - input comments, later - any failed ones that need to be retried
         let uncategorized = [...inputComments];
@@ -53,7 +53,7 @@ function categorizeWithRetry(model, instructions, inputComments, includeSubtopic
             // convert JSON to string representation that will be sent to the model
             const uncategorizedCommentsForModel = uncategorized.map((comment) => JSON.stringify({ id: comment.id, text: comment.text }));
             const outputSchema = typebox_1.Type.Array(includeSubtopics ? types_1.SubtopicCategorizedComment : types_1.TopicCategorizedComment);
-            const newCategorized = (yield model.generateData((0, sensemaker_utils_1.getPrompt)(instructions, uncategorizedCommentsForModel, additionalInstructions), outputSchema));
+            const newCategorized = (yield model.generateData((0, sensemaker_utils_1.getPrompt)(instructions, uncategorizedCommentsForModel, additionalContext), outputSchema));
             const newProcessedComments = processCategorizedComments(newCategorized, inputComments, uncategorized, includeSubtopics, topics);
             categorized = categorized.concat(newProcessedComments.commentRecords);
             uncategorized = newProcessedComments.uncategorizedComments;

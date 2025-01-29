@@ -28,6 +28,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //
 // Eval Types:
 // - Quick Checks: binary checks that summarization must pass to not be low quality
+// - Qualitative: checks the number of times different groups are referenced. The value is expected
+//      to be between the Fixed Representation and Proportional Representation value.
 // - Monitoring: checks on failure rate and timing
 //
 // This script can be slow to run and summarization of 1000 comments can take up to 20 minutes
@@ -39,6 +41,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 //     --vertexProject "<your Vertex Project here>" \
 //     --inputFile "~/2018-BG-with-vote-tallies-filtered.csv" \
 //     --runCount=10
+//     --groupNames "group-1,group-0"
+//     --groupSizes 10,7
 //
 // Run quick checks only:
 // npx ts-node ./evals/run_checks.ts \
@@ -52,7 +56,21 @@ const csv_writer_1 = require("csv-writer");
 const runner_utils_1 = require("../runner-cli/runner_utils");
 const quick_checks_lib_1 = require("./quick_checks_lib");
 const monitoring_checks_lib_1 = require("./monitoring_checks_lib");
+const qualitative_checks_lib_1 = require("./qualitative_checks_lib");
 const SUMMARIES_OUTPUT_FILE_NAME = "summaries.csv";
+function listsToMap(keys, values) {
+    if (keys.length !== values.length) {
+        throw new Error("Keys and values arrays must have the same length");
+    }
+    const map = new Map();
+    for (let i = 0; i < keys.length; i++) {
+        map.set(keys[i], values[i]);
+    }
+    return map;
+}
+function listParser(value) {
+    return value.split(",").map((item) => item.trim());
+}
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         // Parse command line arguments.
@@ -64,22 +82,33 @@ function main() {
             .requiredOption("-v, --vertexProject <project>", "The Vertex Project name.")
             // Optional Flags to Run only a subset of evals
             .option("-q, --runQuickChecks <bool>", "Whether to run Quick Checks", true)
-            .option("-m --runMonitoringChecks <bool>", "Whether to run Monitoring Checks", true);
+            .option("-u, --runQualitativeChecks <bool>", "Whether to run Qualitative Checks", true)
+            .option("-m --runMonitoringChecks <bool>", "Whether to run Monitoring Checks", true)
+            // Required flags for running with runQualitativeChecks
+            .option("-n, --groupNames <items>", "comma separated list of group names", listParser, [
+            "group-0",
+            "group-1",
+        ])
+            .option("-s, --groupSizes <items>", "comma separated list of group sizes. This should be in the same order as groupNames", listParser, []);
         program.parse(process.argv);
         const options = program.opts();
+        const project = options.vertexProject;
         // This check is needed for unit tests otherwise there's issues with the inputFile being unset.
         if (!options || !options.inputFile) {
             console.error("Error! The inputFile flag must be set.");
             return;
         }
         const comments = yield (0, runner_utils_1.getCommentsFromCsv)(options.inputFile);
+        // Use the same discovered topics and subtopics for all summaries to increase consistency and
+        // speed up execution.
+        const topics = yield (0, runner_utils_1.getTopicsAndSubtopics)(project, comments);
         const summaries = [];
         let failureCount = 0;
         const runTimes = [];
         for (let i = 0; i < options.runCount; i++) {
             const startTime = performance.now();
             try {
-                summaries.push(yield (0, runner_utils_1.getSummary)(options.vertexProject, comments));
+                summaries.push((yield (0, runner_utils_1.getSummary)(project, comments, topics)).getText("MARKDOWN"));
                 runTimes.push(performance.now() - startTime);
             }
             catch (error) {
@@ -87,23 +116,35 @@ function main() {
                 failureCount++;
             }
         }
-        if (options.runQuickChecks) {
-            (0, quick_checks_lib_1.runQuickChecks)(options.outputDir, summaries);
-        }
-        if (options.runMonitoringChecks) {
-            (0, monitoring_checks_lib_1.runMonitoringChecks)(options.outputDir, options.runCount, failureCount, runTimes);
-        }
         // For easier debugging of evals also output the summaries that were generated.
         const csvWriter = (0, csv_writer_1.createObjectCsvWriter)({
             path: options.outputDir + "/" + SUMMARIES_OUTPUT_FILE_NAME,
-            header: ["run", "summary"],
+            header: [
+                { id: "run", title: "Run" },
+                { id: "summary", title: "Summary" },
+            ],
         });
         const outputSummaries = summaries.map((summary, index) => {
-            return { run: index, summary: summary.getText("MARKDOWN") };
+            return { run: index, summary: summary };
         });
         csvWriter
             .writeRecords(outputSummaries)
             .then(() => console.log(`${SUMMARIES_OUTPUT_FILE_NAME} file written successfully.`));
+        if (options.runQuickChecks) {
+            (0, quick_checks_lib_1.runQuickChecks)(options.outputDir, summaries, topics);
+        }
+        if (options.runMonitoringChecks) {
+            (0, monitoring_checks_lib_1.runMonitoringChecks)(options.outputDir, options.runCount, failureCount, runTimes);
+        }
+        if (summaries.length == 0) {
+            return;
+        }
+        if (options.runQualitativeChecks) {
+            if (!options.groupNames || !options.groupSizes) {
+                throw new Error("The groupNames and groupSizes args are required when running QualitativeChecks");
+            }
+            (0, qualitative_checks_lib_1.runQualitativeChecks)(options.outputDir, summaries, listsToMap(options.groupNames, options.groupSizes.map(Number)));
+        }
     });
 }
 main();
