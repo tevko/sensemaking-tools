@@ -44,7 +44,7 @@ var __awaiter =
     });
   };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Sensemaker = void 0;
+exports.SensemakerPrompt = exports.Sensemaker = void 0;
 // Module to interact with sensemaking tools.
 const topic_modeling_1 = require("./tasks/topic_modeling");
 const vertex_model_1 = require("./models/vertex_model");
@@ -270,3 +270,18 @@ class Sensemaker {
   }
 }
 exports.Sensemaker = Sensemaker;
+class SensemakerPrompt {
+  learnTopics(comments, includeSubtopics, topics, additionalInstructions) {
+    const instructions = (0, topic_modeling_1.generateTopicModelingPrompt)(
+      includeSubtopics,
+      topics
+    );
+    // surround each comment by triple backticks to avoid model's confusion with single, double quotes and new lines
+    const commentTexts = comments.map(
+      (comment) => "```" + comment.text + ` [${comment.id}]` + "```"
+    );
+    // decide which schema to use based on includeSubtopics
+    return (0, sensemaker_utils_1.getPrompt)(instructions, commentTexts, additionalInstructions);
+  }
+}
+exports.SensemakerPrompt = SensemakerPrompt;
