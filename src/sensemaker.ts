@@ -257,3 +257,22 @@ export class Sensemaker {
     return categorizedComments;
   }
 }
+
+export class SensemakerPrompt {
+  public learnTopics(
+    comments: Comment[],
+    includeSubtopics: boolean,
+    topics?: Topic[],
+    additionalInstructions?: string
+  ): string {
+    const instructions = generateTopicModelingPrompt(includeSubtopics, topics);
+
+    // surround each comment by triple backticks to avoid model's confusion with single, double quotes and new lines
+    const commentTexts = comments.map(
+      (comment) => "```" + comment.text + ` [${comment.id}]` + "```"
+    );
+    // decide which schema to use based on includeSubtopics
+
+    return getPrompt(instructions, commentTexts, additionalInstructions);
+  }
+}
