@@ -21,22 +21,30 @@ const TEST_COMMENTS: Comment[] = [
   {
     id: "1",
     text: "comment 1",
-    topics: [{ name: "Topic A", citations: [1], subtopics: [{ name: "Subtopic A.1", citations: [1] }] }],
+    topics: [
+      { name: "Topic A", citations: [1], subtopics: [{ name: "Subtopic A.1", citations: [1] }] },
+    ],
   },
   {
     id: "2",
     text: "comment 2",
-    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] }],
+    topics: [
+      { name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] },
+    ],
   },
   {
     id: "3",
     text: "comment 3",
-    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2", citations: [1] }], citations: [1] }],
+    topics: [
+      { name: "Topic A", subtopics: [{ name: "Subtopic A.2", citations: [1] }], citations: [1] },
+    ],
   },
   {
     id: "4",
     text: "comment 4",
-    topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1", citations: [1] }], citations: [1] }],
+    topics: [
+      { name: "Topic B", subtopics: [{ name: "Subtopic B.1", citations: [1] }], citations: [1] },
+    ],
   },
 ];
 
@@ -51,7 +59,7 @@ describe("IntroTest", () => {
       ).getSummary()
     ).toEqual(`## Introduction
 
-This report summarizes the results of public input, encompassing __4 comments__. All voters were anonymous. The public input collected covered a wide range of topics including:
+This report summarizes the results of public input, encompassing __4 comments__. All voters were anonymous. The public input collected covered a wide range of topics and subtopics including:
  * __Topic A (3 comments)__
      * Subtopic A.1 (2), Subtopic A.2 (1)
  * __Topic B (1 comments)__
