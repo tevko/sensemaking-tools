@@ -76,10 +76,11 @@ export class GoogleAIModel extends Model {
         topP: 0,
         topK: 1,
         maxOutputTokens: 8192,
+        responseMimeType: "application/json"
       } as GenerationConfig,
     });
 
-    const systemPrompt = `You must respond with valid JSON that matches this schema: ${JSON.stringify(schema)}. Only respond with the JSON, no other text.`;
+    const systemPrompt = `You must respond with valid JSON that matches this schema: ${JSON.stringify(schema)}. Only respond with the JSON, no other text. Ensure the response begins with a [ character and ends with a ] character`;
 
     const response = await retryCall(
       // call LLM

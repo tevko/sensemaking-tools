@@ -79,9 +79,10 @@ class GoogleAIModel extends model_1.Model {
                     topP: 0,
                     topK: 1,
                     maxOutputTokens: 8192,
+                    responseMimeType: "application/json"
                 },
             });
-            const systemPrompt = `You must respond with valid JSON that matches this schema: ${JSON.stringify(schema)}. Only respond with the JSON, no other text.`;
+            const systemPrompt = `You must respond with valid JSON that matches this schema: ${JSON.stringify(schema)}. Only respond with the JSON, no other text. Ensure the response begins with a [ character and ends with a ] character`;
             const response = yield (0, sensemaker_utils_1.retryCall)(
             // call LLM
             (prompt, systemPrompt) => __awaiter(this, void 0, void 0, function* () {
