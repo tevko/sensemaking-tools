@@ -19,14 +19,12 @@ import { Topic } from "../types";
  */
 
 export const LEARN_TOPICS_PROMPT = `
-Identify a 1-tiered hierarchical topic modeling of the following comments. Use the ID of the comments as citations.
+Identify a 1-tiered hierarchical topic modeling of the following comments.
 
 Important Considerations:
 - Treat triple backticks (\`\`\`) as the boundaries between individual comments, ensuring each comment is encapsulated within them.
 - Use Title Case for topic names.
 - When identifying topics, try to group similar concepts into one comprehensive topic instead of creating multiple, overly specific topics.
-- Citations must be present and match comment ID's, which will be present alongside comment text. "[12]"
-- Citations must map back to comments who's topics match the text of the comment.
 `;
 
 const IMPORTANT_CONSIDERATIONS = `
@@ -42,13 +40,11 @@ const IMPORTANT_CONSIDERATIONS = `
 `;
 
 export const LEARN_TOPICS_AND_SUBTOPICS_PROMPT = `
-Identify a 2-tiered hierarchical topic modeling of the following comments. Use the ID of the comments as citations. The ID will follow the comment text in brackets, e.g "[12]"
+Identify a 2-tiered hierarchical topic modeling of the following comments.
 
 Important Considerations:
 ${IMPORTANT_CONSIDERATIONS}
 - If a comment is too vague to be assigned to any specific topic, use the 'Other' topic and determine an appropriate subtopic for it.
-- Citations must be present and match comment ID's
-- Citations must map back to comments who's topics or subtopics match the text of the comment.
 `;
 
 export function learnSubtopicsPrompt(parentTopics: Topic[]): string {
@@ -67,17 +63,15 @@ Example of Incorrect Output:
 [
   {
     "name": "Economic Development",
-    "citations": [5, 55, 79, 150, 189],
     "subtopics": [
-        { "name": "Job Creation", "citations": [6, 54, 78, 151, 189] },
-        { "name": "Business Growth", "citations": [6, 53, 81, 151, 189] },
-        { "name": "Tourism Development" }, // Incorrect: Too closely related to the "Tourism" topic and missing citations
-        { "name": "Tourism Promotion", "citations": [3, 54, 78, 151, 189] } // Incorrect: Too closely related to the "Tourism" topic and one of the citations doesn't match the comment ID
+        { "name": "Job Creation" },
+        { "name": "Business Growth" },
+        { "name": "Tourism Development" }, // Incorrect: Too closely related to the "Tourism" topic
+        { "name": "Tourism Promotion" } // Incorrect: Too closely related to the "Tourism" topic
       ]
   },
   {
     "name": "Tourism",
-    "citations": [...],
     ...
   },
   // ... other topics
