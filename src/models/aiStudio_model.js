@@ -104,22 +104,21 @@ class GoogleAIModel extends model_1.Model {
             }), 
             // Check if the response exists and contains valid JSON
             (response) => {
-                // if (!response || !response.text()) {
-                //   console.error("Failed to get a model response.");
-                //   return false;
-                // }
-                // try {
-                //   JSON.parse(response.text());
-                //   return true;
-                // } catch {
-                //   console.error("Failed to parse response as JSON.");
-                //   return false;
-                // }
-                return true;
+                if (!response || !response.text()) {
+                    console.error("Failed to get a model response.");
+                    return false;
+                }
+                try {
+                    JSON.parse(response.text());
+                    return true;
+                }
+                catch (_a) {
+                    console.error("Failed to parse response as JSON.");
+                    return false;
+                }
             }, MAX_RETRIES, "Failed to get a valid model response.", RETRY_DELAY_MS, [prompt, systemPrompt], // Arguments for the LLM call
             [] // Arguments for the validator function
             );
-            console.log(response, response.text());
             const parsedResponse = JSON.parse(response.text());
             if (!(0, types_1.checkDataSchema)(schema, parsedResponse)) {
                 throw new Error("Model response does not match schema: " + JSON.stringify(parsedResponse));
