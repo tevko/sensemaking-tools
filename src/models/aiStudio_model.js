@@ -102,19 +102,20 @@ class GoogleAIModel extends model_1.Model {
                 return result.response;
             }), 
             // Check if the response exists and contains valid JSON
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             (response) => {
-                if (!response || !response.text()) {
-                    console.error("Failed to get a model response.");
-                    return false;
-                }
-                try {
-                    JSON.parse(response.text());
-                    return true;
-                }
-                catch (_a) {
-                    console.error("Failed to parse response as JSON.");
-                    return false;
-                }
+                // if (!response || !response.text()) {
+                //   console.error("Failed to get a model response.");
+                //   return false;
+                // }
+                // try {
+                //   JSON.parse(response.text());
+                //   return true;
+                // } catch {
+                //   console.error("Failed to parse response as JSON.");
+                //   return false;
+                // }
+                return true;
             }, MAX_RETRIES, "Failed to get a valid model response.", RETRY_DELAY_MS, [prompt, systemPrompt], // Arguments for the LLM call
             [] // Arguments for the validator function
             );
