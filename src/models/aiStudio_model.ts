@@ -101,7 +101,6 @@ export class GoogleAIModel extends Model {
         return result.response;
       },
       // Check if the response exists and contains valid JSON
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (response) => {
         // if (!response || !response.text()) {
         //   console.error("Failed to get a model response.");
@@ -122,7 +121,7 @@ export class GoogleAIModel extends Model {
       [prompt, systemPrompt], // Arguments for the LLM call
       [] // Arguments for the validator function
     );
-
+    console.log(response, response.text())
     const parsedResponse = JSON.parse(response.text());
 
     if (!checkDataSchema(schema, parsedResponse)) {

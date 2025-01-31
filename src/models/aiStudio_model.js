@@ -102,7 +102,6 @@ class GoogleAIModel extends model_1.Model {
                 return result.response;
             }), 
             // Check if the response exists and contains valid JSON
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             (response) => {
                 // if (!response || !response.text()) {
                 //   console.error("Failed to get a model response.");
@@ -119,6 +118,7 @@ class GoogleAIModel extends model_1.Model {
             }, MAX_RETRIES, "Failed to get a valid model response.", RETRY_DELAY_MS, [prompt, systemPrompt], // Arguments for the LLM call
             [] // Arguments for the validator function
             );
+            console.log(response, response.text());
             const parsedResponse = JSON.parse(response.text());
             if (!(0, types_1.checkDataSchema)(schema, parsedResponse)) {
                 throw new Error("Model response does not match schema: " + JSON.stringify(parsedResponse));
