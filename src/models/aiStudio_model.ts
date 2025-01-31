@@ -75,7 +75,7 @@ export class GoogleAIModel extends Model {
         temperature: 0,
         topP: 0,
         topK: 1,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 8192,
       } as GenerationConfig,
     });
 
