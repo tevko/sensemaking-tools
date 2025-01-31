@@ -32,14 +32,12 @@ const grounding_1 = require("./validation/grounding");
  */
 exports.FlatTopic = typebox_1.Type.Object({
     name: typebox_1.Type.String(),
-    citations: typebox_1.Type.Array(typebox_1.Type.Number()),
 });
 /**
  * TypeBox JSON Schema representation of a topic record as a name, with flat subtopics.
  */
 exports.NestedTopic = typebox_1.Type.Object({
     name: typebox_1.Type.String(),
-    citations: typebox_1.Type.Array(typebox_1.Type.Number()),
     subtopics: typebox_1.Type.Array(exports.FlatTopic),
 });
 /**

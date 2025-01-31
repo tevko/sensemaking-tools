@@ -22,28 +22,28 @@ const TEST_COMMENTS: Comment[] = [
     id: "1",
     text: "comment 1",
     topics: [
-      { name: "Topic A", citations: [1], subtopics: [{ name: "Subtopic A.1", citations: [1] }] },
+      { name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] },
     ],
   },
   {
     id: "2",
     text: "comment 2",
     topics: [
-      { name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] },
+      { name: "Topic A", subtopics: [{ name: "Subtopic A.1" }] },
     ],
   },
   {
     id: "3",
     text: "comment 3",
     topics: [
-      { name: "Topic A", subtopics: [{ name: "Subtopic A.2", citations: [1] }], citations: [1] },
+      { name: "Topic A", subtopics: [{ name: "Subtopic A.2" }] },
     ],
   },
   {
     id: "4",
     text: "comment 4",
     topics: [
-      { name: "Topic B", subtopics: [{ name: "Subtopic B.1", citations: [1] }], citations: [1] },
+      { name: "Topic B", subtopics: [{ name: "Subtopic B.1" }] },
     ],
   },
 ];

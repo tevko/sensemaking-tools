@@ -29,7 +29,7 @@ const TEST_COMMENTS: CommentWithVoteTallies[] = [
       "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
       "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
     },
-    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] }],
+    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1",  }],  }],
   },
   {
     id: "2",
@@ -38,7 +38,7 @@ const TEST_COMMENTS: CommentWithVoteTallies[] = [
       "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
       "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
     },
-    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1", citations: [1] }], citations: [1] }],
+    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.1",  }],  }],
   },
   {
     id: "3",
@@ -47,7 +47,7 @@ const TEST_COMMENTS: CommentWithVoteTallies[] = [
       "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
       "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
     },
-    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2", citations: [1] }], citations: [1] }],
+    topics: [{ name: "Topic A", subtopics: [{ name: "Subtopic A.2",  }],  }],
   },
   {
     id: "4",
@@ -56,7 +56,7 @@ const TEST_COMMENTS: CommentWithVoteTallies[] = [
       "0": { agreeCount: 10, disagreeCount: 5, passCount: 0, totalCount: 15 },
       "1": { agreeCount: 5, disagreeCount: 10, passCount: 5, totalCount: 20 },
     },
-    topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1", citations: [1] }], citations: [1] }],
+    topics: [{ name: "Topic B", subtopics: [{ name: "Subtopic B.1",  }],  }],
   },
 ];
 

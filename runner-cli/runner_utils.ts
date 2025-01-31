@@ -134,7 +134,6 @@ export async function getCommentsFromCsv(inputFilePath: string): Promise<Comment
           newComment.topics = [];
           newComment.topics.push({
             name: row.topic.toString(),
-            // @ts-expect-error csv 
             subtopics: [{ name: row.subtopic.toString() }],
           });
         }
@@ -164,10 +163,8 @@ export function getTopicsFromComments(comments: Comment[]): Topic[] {
   // Convert that map to a Topic array and return
   const returnTopics: Topic[] = [];
   for (const topicName in mapTopicToSubtopicSet) {
-    // @ts-expect-error citations
     const topic: Topic = { name: topicName, subtopics: [] };
     for (const subtopicName of mapTopicToSubtopicSet[topicName]!.keys()) {
-      // @ts-expect-error citations
       topic.subtopics.push({ name: subtopicName });
     }
     returnTopics.push(topic);

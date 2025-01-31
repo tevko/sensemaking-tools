@@ -101,16 +101,16 @@ describe("SensemakerUtilsTest", () => {
         id: "1",
         text: "Comment 1",
         topics: [
-          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1", citations: [1] }], citations: [1] },
-          { name: "Topic 2", subtopics: [{ name: "Subtopic 2.1", citations: [1] }], citations: [1] },
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
+          { name: "Topic 2", subtopics: [{ name: "Subtopic 2.1" }] },
         ],
       };
       const comment2: Comment = {
         id: "2",
         text: "Comment 2",
         topics: [
-          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1", citations: [1] }], citations: [1] },
-          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.2", citations: [1] }], citations: [1] },
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.1" }] },
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1.2" }] },
         ],
       };
 

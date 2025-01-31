@@ -39,23 +39,22 @@ describe("CategorizationTest", () => {
       { id: "3", text: "Comment 3" },
     ];
     const includeSubtopics = false;
-    const instructions =
-      "Categorize the comments based on these topics:  [{'name': 'Topic 1', 'citations': [1]}]";
+    const instructions = "Categorize the comments based on these topics:  [{'name': 'Topic 1'}]";
     const commentsWithTextAndTopics = [
       {
         id: "1",
         text: "Comment 1",
-        topics: [{ name: "Topic 1", subtopics: [], citations: [1] }],
+        topics: [{ name: "Topic 1", subtopics: [] }],
       },
       {
         id: "2",
         text: "Comment 2",
-        topics: [{ name: "Topic 1", subtopics: [], citations: [1] }],
+        topics: [{ name: "Topic 1", subtopics: [] }],
       },
       {
         id: "3",
         text: "Comment 3",
-        topics: [{ name: "Topic 1", subtopics: [], citations: [1] }],
+        topics: [{ name: "Topic 1", subtopics: [] }],
       },
     ];
 
@@ -70,7 +69,7 @@ describe("CategorizationTest", () => {
       instructions,
       comments,
       includeSubtopics,
-      [{ name: "Topic 1", subtopics: [], citations: [1] }]
+      [{ name: "Topic 1", subtopics: [] }]
     );
 
     expect(mockGenerateData).toHaveBeenCalledTimes(2);
@@ -84,8 +83,7 @@ describe("CategorizationTest", () => {
       { id: "3", text: "Comment 3" },
     ];
     const includeSubtopics = false;
-    const instructions =
-      "Categorize the comments based on these topics:  [{'name': 'Topic 1', 'citations': [1]}]";
+    const instructions = "Categorize the comments based on these topics:  [{'name': 'Topic 1'}]";
     const commentsWithTextAndTopics = [
       {
         id: "1",
@@ -100,7 +98,7 @@ describe("CategorizationTest", () => {
       {
         id: "3",
         text: "Comment 3",
-        topics: [{ name: "Topic 1", subtopics: [], citations: [1] }],
+        topics: [{ name: "Topic 1", subtopics: [] }],
       },
     ];
 
@@ -117,7 +115,7 @@ describe("CategorizationTest", () => {
       instructions,
       comments,
       includeSubtopics,
-      [{ name: "Topic 1", subtopics: [], citations: [1] }]
+      [{ name: "Topic 1", subtopics: [] }]
     );
 
     expect(mockGenerateData).toHaveBeenCalledTimes(2);
@@ -130,10 +128,10 @@ describe("CategorizationTest", () => {
       { id: "2", text: "Comment 2" },
       { id: "3", text: "Comment 3" },
     ];
-    const topics = '[{"name": "Topic 1", "subtopics": [], citations: [1]}]';
+    const topics = '[{"name": "Topic 1", "subtopics": []}]';
     const instructions = "Categorize the comments based on these topics: " + topics;
     const includeSubtopics = true;
-    const topicsJson = [{ name: "Topic 1", subtopics: [], citations: [1] }];
+    const topicsJson = [{ name: "Topic 1", subtopics: [] }];
 
     // Mock the model to always return an empty response. This simulates a
     // categorization failure.
@@ -175,10 +173,10 @@ describe("CategorizationTest", () => {
       { id: "2", text: "Comment 2" },
       { id: "3", text: "Comment 3" },
     ];
-    const topics = '[{"name": "Topic 1", "subtopics": [], citations: [1]}]';
+    const topics = '[{"name": "Topic 1", "subtopics": []}]';
     const instructions = "Categorize the comments based on these topics: " + topics;
     const includeSubtopics = false;
-    const topicsJson = [{ name: "Topic 1", subtopics: [], citations: [1] }];
+    const topicsJson = [{ name: "Topic 1", subtopics: [] }];
 
     // Mock the model to always return an empty response. This simulates a
     // categorization failure.
@@ -216,10 +214,7 @@ describe("CategorizationTest", () => {
   });
 
   it("should generate a 1-level categorization prompt (topics only)", () => {
-    const sampleTopics: Topic[] = [
-      { name: "Economic Development", citations: [1] },
-      { name: "Housing", citations: [1] },
-    ];
+    const sampleTopics: Topic[] = [{ name: "Economic Development" }, { name: "Housing" }];
     const includeSubtopics = false;
     const prompt = generateCategorizationPrompt(sampleTopics, includeSubtopics);
     expect(prompt).toContain(
@@ -232,19 +227,11 @@ describe("CategorizationTest", () => {
     const sampleTopics: Topic[] = [
       {
         name: "Economic Development",
-        citations: [1],
-        subtopics: [
-          { name: "Job Creation", citations: [1] },
-          { name: "Business Growth", citations: [1] },
-        ],
+        subtopics: [{ name: "Job Creation" }, { name: "Business Growth" }],
       },
       {
         name: "Housing",
-        citations: [1],
-        subtopics: [
-          { name: "Affordable Housing Options", citations: [1] },
-          { name: "Rental Market Prices", citations: [1] },
-        ],
+        subtopics: [{ name: "Affordable Housing Options" }, { name: "Rental Market Prices" }],
       },
     ];
     const includeSubtopics = true;
@@ -264,23 +251,19 @@ describe("validateCommentRecord", () => {
   ];
 
   const topics: Topic[] = [
-    { name: "Topic 1", subtopics: [{ name: "Subtopic 1", citations: [1] }], citations: [1] },
-    { name: "Topic 2", subtopics: [{ name: "Subtopic 2", citations: [1] }], citations: [1] },
+    { name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] },
+    { name: "Topic 2", subtopics: [{ name: "Subtopic 2" }] },
   ];
 
   it("should return all comments as valid with correct input", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ citations: [1], name: "Subtopic 1" }] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [
-          { name: "Topic 2", citations: [1], subtopics: [{ citations: [1], name: "Subtopic 2" }] },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Subtopic 2" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -297,21 +280,15 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", subtopics: [{ name: "Subtopic 1", citations: [1] }], citations: [1] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [
-          { name: "Topic 2", subtopics: [{ name: "Subtopic 2", citations: [1] }], citations: [1] },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Subtopic 2" }] }],
       },
       {
         id: "3",
-        topics: [
-          { name: "Topic 1", subtopics: [{ name: "Subtopic 1", citations: [1] }], citations: [1] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -328,9 +305,7 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       { id: "2", topics: [] },
     ];
@@ -348,13 +323,11 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [{ name: "Topic 2", subtopics: [], citations: [1] }],
+        topics: [{ name: "Topic 2", subtopics: [] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -371,19 +344,11 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [
-          {
-            name: "Invalid Topic",
-            citations: [1],
-            subtopics: [{ name: "Subtopic 2", citations: [1] }],
-          },
-        ],
+        topics: [{ name: "Invalid Topic", subtopics: [{ name: "Subtopic 2" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -401,19 +366,13 @@ describe("validateCommentRecord", () => {
       {
         id: "1",
         topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }] },
-          {
-            name: "Invalid Topic",
-            citations: [1],
-            subtopics: [{ name: "Subtopic 2", citations: [1] }],
-          },
+          { name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] },
+          { name: "Invalid Topic", subtopics: [{ name: "Subtopic 2" }] },
         ],
       },
       {
         id: "2",
-        topics: [
-          { name: "Topic 2", citations: [1], subtopics: [{ name: "Subtopic 2", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Subtopic 2" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -430,19 +389,11 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          { name: "Topic 1", citations: [1], subtopics: [{ name: "Subtopic 1", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 1", subtopics: [{ name: "Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [
-          {
-            name: "Topic 2",
-            citations: [1],
-            subtopics: [{ name: "Invalid Subtopic", citations: [1] }],
-          },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Invalid Subtopic" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -462,19 +413,13 @@ describe("validateCommentRecord", () => {
         topics: [
           {
             name: "Topic 1",
-            subtopics: [
-              { name: "Subtopic 1", citations: [1] },
-              { name: "Invalid Subtopic", citations: [1] },
-            ],
-            citations: [1],
+            subtopics: [{ name: "Subtopic 1" }, { name: "Invalid Subtopic" }],
           },
         ],
       },
       {
         id: "2",
-        topics: [
-          { name: "Topic 2", citations: [1], subtopics: [{ name: "Subtopic 2", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Subtopic 2" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(
@@ -491,19 +436,11 @@ describe("validateCommentRecord", () => {
     const commentRecords: CommentRecord[] = [
       {
         id: "1",
-        topics: [
-          {
-            name: "Other",
-            citations: [1],
-            subtopics: [{ name: "Other Subtopic 1", citations: [1] }],
-          },
-        ],
+        topics: [{ name: "Other", subtopics: [{ name: "Other Subtopic 1" }] }],
       },
       {
         id: "2",
-        topics: [
-          { name: "Topic 2", citations: [1], subtopics: [{ name: "Other", citations: [1] }] },
-        ],
+        topics: [{ name: "Topic 2", subtopics: [{ name: "Other" }] }],
       },
     ];
     const { commentsPassedValidation, commentsWithInvalidTopics } = validateCommentRecords(

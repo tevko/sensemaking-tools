@@ -120,7 +120,6 @@ function getCommentsFromCsv(inputFilePath) {
                     newComment.topics = [];
                     newComment.topics.push({
                         name: row.topic.toString(),
-                        // @ts-expect-error csv 
                         subtopics: [{ name: row.subtopic.toString() }],
                     });
                 }
@@ -148,10 +147,8 @@ function getTopicsFromComments(comments) {
     // Convert that map to a Topic array and return
     const returnTopics = [];
     for (const topicName in mapTopicToSubtopicSet) {
-        // @ts-expect-error citations
         const topic = { name: topicName, subtopics: [] };
         for (const subtopicName of mapTopicToSubtopicSet[topicName].keys()) {
-            // @ts-expect-error citations
             topic.subtopics.push({ name: subtopicName });
         }
         returnTopics.push(topic);
